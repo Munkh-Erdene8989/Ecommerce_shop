@@ -81,6 +81,7 @@ export default function ProductDetailPage() {
                   alt={product.name}
                   fill
                   className="object-cover rounded-lg"
+                  unoptimized
                 />
               </div>
             </div>

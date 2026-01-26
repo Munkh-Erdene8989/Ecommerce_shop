@@ -22,9 +22,7 @@ export default function ProductCard({ product }: ProductCardProps) {
             alt={product.name}
             fill
             className="object-cover"
-            onError={(e) => {
-              e.currentTarget.src = 'https://via.placeholder.com/300x300?text=Product'
-            }}
+            unoptimized
           />
         </div>
         <div className="p-4">
