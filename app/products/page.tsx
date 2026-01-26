@@ -1,14 +1,16 @@
 'use client'
 
 import { useSearchParams } from 'next/navigation'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, Suspense } from 'react'
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
 import ProductCard from '@/components/ProductCard'
 import { getProducts, Product } from '@/lib/products'
 import Link from 'next/link'
 
-export default function ProductsPage() {
+export const dynamic = 'force-dynamic'
+
+function ProductsContent() {
   const searchParams = useSearchParams()
   const [filteredProducts, setFilteredProducts] = useState<Product[]>([])
   const [sortBy, setSortBy] = useState('default')
@@ -149,5 +151,13 @@ export default function ProductsPage() {
 
       <Footer />
     </main>
+  )
+}
+
+export default function ProductsPage() {
+  return (
+    <Suspense fallback={<div className="text-center py-20">Ачааллаж байна...</div>}>
+      <ProductsContent />
+    </Suspense>
   )
 }

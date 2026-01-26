@@ -1,11 +1,14 @@
 'use client'
 
 import { useSearchParams } from 'next/navigation'
+import { Suspense } from 'react'
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
 import Link from 'next/link'
 
-export default function OrderSuccessPage() {
+export const dynamic = 'force-dynamic'
+
+function OrderSuccessContent() {
   const searchParams = useSearchParams()
   const orderId = searchParams.get('orderId')
 
@@ -45,5 +48,13 @@ export default function OrderSuccessPage() {
       </section>
       <Footer />
     </main>
+  )
+}
+
+export default function OrderSuccessPage() {
+  return (
+    <Suspense fallback={<div className="text-center py-20">Ачааллаж байна...</div>}>
+      <OrderSuccessContent />
+    </Suspense>
   )
 }
