@@ -1,6 +1,6 @@
 {
   "name": "az-beauty",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
@@ -11,12 +11,26 @@
   "dependencies": {
     "next": "^14.0.0",
     "react": "^18.2.0",
-    "react-dom": "^18.2.0"
+    "react-dom": "^18.2.0",
+    "@supabase/supabase-js": "^2.39.0",
+    "@supabase/ssr": "^0.1.0",
+    "@tanstack/react-query": "^5.17.0",
+    "@tanstack/react-query-devtools": "^5.17.0",
+    "axios": "^1.6.2",
+    "zod": "^3.22.4",
+    "react-hook-form": "^7.49.2",
+    "@hookform/resolvers": "^3.3.2",
+    "lucide-react": "^0.303.0",
+    "react-hot-toast": "^2.4.1",
+    "date-fns": "^3.2.0",
+    "recharts": "^2.10.3",
+    "qrcode": "^1.5.3"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",
     "@types/react": "^18.2.0",
     "@types/react-dom": "^18.2.0",
+    "@types/qrcode": "^1.5.5",
     "autoprefixer": "^10.4.16",
     "postcss": "^8.4.31",
     "tailwindcss": "^3.3.5",

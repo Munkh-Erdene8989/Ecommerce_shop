@@ -1,6 +1,9 @@
 import type { Metadata } from 'next'
 import './globals.css'
 import { CartProvider } from '@/contexts/CartContext'
+import { AuthProvider } from '@/lib/providers/AuthProvider'
+import { QueryProvider } from '@/lib/providers/QueryProvider'
+import { Toaster } from 'react-hot-toast'
 
 export const metadata: Metadata = {
   title: 'AZ Beauty - Солонгос Гоо Сайхны Бүтээгдэхүүн',
@@ -15,9 +18,23 @@ export default function RootLayout({
   return (
     <html lang="mn">
       <body>
-        <CartProvider>
-          {children}
-        </CartProvider>
+        <QueryProvider>
+          <AuthProvider>
+            <CartProvider>
+              {children}
+              <Toaster
+                position="top-center"
+                toastOptions={{
+                  duration: 3000,
+                  style: {
+                    background: '#333',
+                    color: '#fff',
+                  },
+                }}
+              />
+            </CartProvider>
+          </AuthProvider>
+        </QueryProvider>
       </body>
     </html>
   )

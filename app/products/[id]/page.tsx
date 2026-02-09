@@ -1,11 +1,12 @@
 'use client'
 
 import { useParams, useRouter } from 'next/navigation'
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
 import ProductCard from '@/components/ProductCard'
-import { getProductById, getProducts, formatPrice, Product } from '@/lib/products'
+import { useProduct, useProducts } from '@/lib/hooks/use-products'
+import { formatPrice, getDiscountPercent } from '@/lib/utils'
 import { useCart } from '@/contexts/CartContext'
 import Image from 'next/image'
 import Link from 'next/link'
@@ -14,49 +15,75 @@ export default function ProductDetailPage() {
   const params = useParams()
   const router = useRouter()
   const { addToCart } = useCart()
-  const [product, setProduct] = useState<Product | null>(null)
   const [quantity, setQuantity] = useState(1)
   const [activeTab, setActiveTab] = useState('description')
 
-  useEffect(() => {
-    const id = parseInt(params.id as string)
-    const foundProduct = getProductById(id)
-    if (!foundProduct) {
-      router.push('/products')
-      return
-    }
-    setProduct(foundProduct)
-  }, [params.id, router])
+  const productId = params.id as string
+  const { data: product, isLoading, error } = useProduct(productId)
+  const { data: allProducts } = useProducts({ category: product?.category })
 
-  if (!product) {
-    return <div className="text-center py-20">Ачааллаж байна...</div>
+  const relatedProducts = allProducts?.filter((p) => p.id !== productId).slice(0, 4) || []
+
+  if (isLoading) {
+    return (
+      <main>
+        <Header />
+        <div className="container mx-auto px-5 py-20">
+          <div className="grid md:grid-cols-2 gap-10">
+            <div className="bg-gray-200 h-96 rounded-lg animate-pulse" />
+            <div className="space-y-4">
+              <div className="bg-gray-200 h-8 rounded animate-pulse w-3/4" />
+              <div className="bg-gray-200 h-6 rounded animate-pulse w-1/2" />
+              <div className="bg-gray-200 h-10 rounded animate-pulse w-1/3" />
+              <div className="bg-gray-200 h-20 rounded animate-pulse" />
+            </div>
+          </div>
+        </div>
+        <Footer />
+      </main>
+    )
   }
 
-  const discount = product.originalPrice
-    ? Math.round((1 - product.price / product.originalPrice) * 100)
-    : 0
+  if (error || !product) {
+    return (
+      <main>
+        <Header />
+        <div className="text-center py-20">
+          <h2 className="text-2xl font-bold mb-4">Бүтээгдэхүүн олдсонгүй</h2>
+          <Link href="/products" className="text-primary hover:underline">
+            Бүтээгдэхүүн руу буцах
+          </Link>
+        </div>
+        <Footer />
+      </main>
+    )
+  }
 
-  const relatedProducts = getProducts()
-    .filter(p => p.category === product.category && p.id !== product.id)
-    .slice(0, 4)
+  const discount = getDiscountPercent(product.price, product.original_price)
 
   const handleAddToCart = () => {
-    addToCart({
-      id: product.id,
-      name: product.name,
-      price: product.price,
-      image: product.image,
-    }, quantity)
+    addToCart(
+      {
+        id: parseInt(product.id) || 0,
+        name: product.name,
+        price: product.price,
+        image: product.image,
+      },
+      quantity
+    )
     alert('Сагсанд нэмэгдлээ!')
   }
 
   const handleBuyNow = () => {
-    addToCart({
-      id: product.id,
-      name: product.name,
-      price: product.price,
-      image: product.image,
-    }, quantity)
+    addToCart(
+      {
+        id: parseInt(product.id) || 0,
+        name: product.name,
+        price: product.price,
+        image: product.image,
+      },
+      quantity
+    )
     router.push('/checkout')
   }
 
@@ -65,9 +92,14 @@ export default function ProductDetailPage() {
       <Header />
       <div className="bg-gray-100 py-3">
         <div className="container mx-auto px-5">
-          <Link href="/" className="text-gray-600 hover:text-primary">Нүүр</Link> /{' '}
-          <Link href="/products" className="text-gray-600 hover:text-primary">Бүтээгдэхүүн</Link> /{' '}
-          <span>{product.name}</span>
+          <Link href="/" className="text-gray-600 hover:text-primary">
+            Нүүр
+          </Link>{' '}
+          /{' '}
+          <Link href="/products" className="text-gray-600 hover:text-primary">
+            Бүтээгдэхүүн
+          </Link>{' '}
+          / <span>{product.name}</span>
         </div>
       </div>
 
@@ -87,19 +119,22 @@ export default function ProductDetailPage() {
             </div>
 
             <div>
+              <div className="text-sm text-gray-500 mb-2">{product.brand}</div>
               <h1 className="text-3xl font-bold mb-4">{product.name}</h1>
               <div className="flex items-center gap-2 mb-4">
                 <span className="text-yellow-400">★★★★★</span>
                 <span>{product.rating}</span>
-                <span className="text-gray-500">({product.reviews} үнэлгээ)</span>
+                <span className="text-gray-500">({product.reviews_count} үнэлгээ)</span>
               </div>
 
               <div className="flex items-center gap-4 mb-6">
-                <span className="text-3xl font-bold text-primary">{formatPrice(product.price)}</span>
-                {product.originalPrice && (
+                <span className="text-3xl font-bold text-primary">
+                  {formatPrice(product.price)}
+                </span>
+                {product.original_price && (
                   <>
                     <span className="text-xl text-gray-500 line-through">
-                      {formatPrice(product.originalPrice)}
+                      {formatPrice(product.original_price)}
                     </span>
                     {discount > 0 && (
                       <span className="bg-red-500 text-white px-3 py-1 rounded">
@@ -111,6 +146,22 @@ export default function ProductDetailPage() {
               </div>
 
               <p className="text-gray-600 mb-8 leading-relaxed">{product.description}</p>
+
+              {product.skin_type && product.skin_type.length > 0 && (
+                <div className="mb-4">
+                  <span className="text-sm font-semibold">Арьсны төрөл: </span>
+                  <div className="flex gap-2 mt-1">
+                    {product.skin_type.map((type) => (
+                      <span
+                        key={type}
+                        className="text-xs bg-gray-100 px-2 py-1 rounded"
+                      >
+                        {type}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               <div className="mb-6">
                 <label className="block mb-2 font-semibold">Тоо ширхэг:</label>
@@ -140,20 +191,17 @@ export default function ProductDetailPage() {
               <div className="flex gap-4 mb-8">
                 <button
                   onClick={handleAddToCart}
-                  className="flex-1 bg-primary text-white py-4 rounded font-bold hover:bg-secondary transition"
+                  disabled={!product.in_stock}
+                  className="flex-1 bg-primary text-white py-4 rounded font-bold hover:bg-secondary transition disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  Сагсанд нэмэх
+                  {product.in_stock ? 'Сагсанд нэмэх' : 'Дууссан'}
                 </button>
                 <button
                   onClick={handleBuyNow}
-                  className="flex-1 bg-gray-900 text-white py-4 rounded font-bold hover:bg-gray-800 transition"
+                  disabled={!product.in_stock}
+                  className="flex-1 bg-gray-900 text-white py-4 rounded font-bold hover:bg-gray-800 transition disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Одоо худалдаж авах
-                </button>
-                <button className="w-14 h-14 border border-gray-300 rounded flex items-center justify-center hover:border-primary transition">
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-                  </svg>
                 </button>
               </div>
 
@@ -180,38 +228,26 @@ export default function ProductDetailPage() {
             </div>
           </div>
 
+          {/* Tabs */}
           <div className="mb-16">
             <div className="flex gap-6 border-b border-gray-200 mb-6">
-              <button
-                onClick={() => setActiveTab('description')}
-                className={`pb-4 px-2 font-semibold ${
-                  activeTab === 'description'
-                    ? 'border-b-2 border-primary text-primary'
-                    : 'text-gray-600'
-                }`}
-              >
-                Тайлбар
-              </button>
-              <button
-                onClick={() => setActiveTab('ingredients')}
-                className={`pb-4 px-2 font-semibold ${
-                  activeTab === 'ingredients'
-                    ? 'border-b-2 border-primary text-primary'
-                    : 'text-gray-600'
-                }`}
-              >
-                Найрлага
-              </button>
-              <button
-                onClick={() => setActiveTab('reviews')}
-                className={`pb-4 px-2 font-semibold ${
-                  activeTab === 'reviews'
-                    ? 'border-b-2 border-primary text-primary'
-                    : 'text-gray-600'
-                }`}
-              >
-                Үнэлгээ
-              </button>
+              {[
+                { id: 'description', label: 'Тайлбар' },
+                { id: 'ingredients', label: 'Найрлага' },
+                { id: 'reviews', label: 'Үнэлгээ' },
+              ].map((tab) => (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`pb-4 px-2 font-semibold ${
+                    activeTab === tab.id
+                      ? 'border-b-2 border-primary text-primary'
+                      : 'text-gray-600'
+                  }`}
+                >
+                  {tab.label}
+                </button>
+              ))}
             </div>
 
             <div>
@@ -219,7 +255,8 @@ export default function ProductDetailPage() {
                 <div>
                   <p className="text-gray-600 leading-relaxed mb-4">{product.description}</p>
                   <p className="text-gray-600 leading-relaxed">
-                    Энэ бүтээгдэхүүн нь солонгосын шилдэг гоо сайхны брэндүүдийн нэг юм. Байгалийн найрлагатай, арьсанд ээлтэй.
+                    Энэ бүтээгдэхүүн нь солонгосын шилдэг гоо сайхны брэндүүдийн нэг юм. Байгалийн
+                    найрлагатай, арьсанд ээлтэй.
                   </p>
                 </div>
               )}
@@ -249,6 +286,7 @@ export default function ProductDetailPage() {
             </div>
           </div>
 
+          {/* Related Products */}
           {relatedProducts.length > 0 && (
             <div>
               <h2 className="text-2xl font-bold mb-6">Холбоотой бүтээгдэхүүн</h2>

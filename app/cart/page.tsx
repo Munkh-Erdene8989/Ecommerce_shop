@@ -1,10 +1,9 @@
 'use client'
 
-import { useEffect, useState } from 'react'
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
 import { useCart } from '@/contexts/CartContext'
-import { formatPrice } from '@/lib/products'
+import { formatPrice } from '@/lib/utils'
 import Image from 'next/image'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
@@ -12,18 +11,10 @@ import { useRouter } from 'next/navigation'
 export default function CartPage() {
   const { cart, removeFromCart, updateQuantity, getTotal } = useCart()
   const router = useRouter()
-  const [shippingCost, setShippingCost] = useState(5000)
 
   const subtotal = getTotal()
-  const total = subtotal + (subtotal >= 60000 ? 0 : shippingCost)
-
-  useEffect(() => {
-    if (subtotal >= 60000) {
-      setShippingCost(0)
-    } else {
-      setShippingCost(5000)
-    }
-  }, [subtotal])
+  const shippingCost = subtotal >= 60000 ? 0 : 5000
+  const total = subtotal + shippingCost
 
   if (cart.length === 0) {
     return (
@@ -31,7 +22,10 @@ export default function CartPage() {
         <Header />
         <div className="bg-gray-100 py-3">
           <div className="container mx-auto px-5">
-            <Link href="/" className="text-gray-600 hover:text-primary">Нүүр</Link> / <span>Сагс</span>
+            <Link href="/" className="text-gray-600 hover:text-primary">
+              Нүүр
+            </Link>{' '}
+            / <span>Сагс</span>
           </div>
         </div>
         <section className="py-20">
@@ -39,7 +33,10 @@ export default function CartPage() {
             <div className="text-6xl mb-6">🛍️</div>
             <h2 className="text-2xl font-bold mb-4">Таны сагс хоосон байна</h2>
             <p className="text-gray-600 mb-8">Дэлгүүр рүү очиж бүтээгдэхүүн сонгоно уу</p>
-            <Link href="/products" className="inline-block bg-primary text-white px-10 py-4 rounded-full font-bold hover:shadow-lg transition">
+            <Link
+              href="/products"
+              className="inline-block bg-primary text-white px-10 py-4 rounded-full font-bold hover:shadow-lg transition"
+            >
               Дэлгүүр рүү очих
             </Link>
           </div>
@@ -54,7 +51,10 @@ export default function CartPage() {
       <Header />
       <div className="bg-gray-100 py-3">
         <div className="container mx-auto px-5">
-          <Link href="/" className="text-gray-600 hover:text-primary">Нүүр</Link> / <span>Сагс</span>
+          <Link href="/" className="text-gray-600 hover:text-primary">
+            Нүүр
+          </Link>{' '}
+          / <span>Сагс</span>
         </div>
       </div>
 
@@ -71,6 +71,7 @@ export default function CartPage() {
                       alt={item.name}
                       fill
                       className="object-cover rounded"
+                      unoptimized
                     />
                   </div>
                   <div className="flex-1">
@@ -113,7 +114,7 @@ export default function CartPage() {
                 </div>
                 <div className="flex justify-between">
                   <span>Хүргэлт:</span>
-                  <span>{formatPrice(shippingCost)}</span>
+                  <span>{shippingCost === 0 ? 'Үнэгүй' : formatPrice(shippingCost)}</span>
                 </div>
                 <div className="border-t border-gray-200 pt-4 flex justify-between text-xl font-bold">
                   <span>Нийт:</span>
@@ -122,7 +123,7 @@ export default function CartPage() {
               </div>
               {subtotal < 60000 && (
                 <div className="bg-green-50 text-green-700 p-3 rounded mb-4 text-sm">
-                  <span>{formatPrice(60000 - subtotal)} дээш үнэгүй хүргэлт</span>
+                  <span>{formatPrice(60000 - subtotal)} нэмж захиалбал үнэгүй хүргэлт!</span>
                 </div>
               )}
               <button

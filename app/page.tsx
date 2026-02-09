@@ -4,18 +4,15 @@ import HeroBanner from '@/components/HeroBanner'
 import PromoBanner from '@/components/PromoBanner'
 import CategoriesSection from '@/components/CategoriesSection'
 import FeaturedProducts from '@/components/FeaturedProducts'
-import { getProducts } from '@/lib/products'
 
-export default async function Home() {
-  const products = getProducts()
-  
+export default function Home() {
   return (
     <main>
       <Header />
       <HeroBanner />
       <PromoBanner />
       <CategoriesSection />
-      <FeaturedProducts products={products} />
+      <FeaturedProducts />
       <Footer />
     </main>
   )
