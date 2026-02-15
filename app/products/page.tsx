@@ -1,160 +1,71 @@
-'use client'
-
-import { useSearchParams } from 'next/navigation'
-import { Suspense } from 'react'
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
-import ProductCard from '@/components/ProductCard'
-import { useProducts } from '@/lib/hooks/use-products'
-import { getCategoryName } from '@/lib/utils'
 import Link from 'next/link'
+import Image from 'next/image'
+import { createClient } from '@/lib/supabase/server'
+import { formatPrice } from '@/lib/utils'
+import { getCategoryName } from '@/lib/utils'
 
-export const dynamic = 'force-dynamic'
+export default async function ProductsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ category?: string; search?: string }>
+}) {
+  const params = await searchParams
+  const supabase = await createClient()
+  let q = supabase.from('products').select('id, name, slug, price, original_price, image, category')
+  if (params.category) q = q.eq('category', params.category)
+  if (params.search) q = q.ilike('name', `%${params.search}%`)
+  q = q.order('created_at', { ascending: false })
+  const { data: products } = await q
 
-function ProductsContent() {
-  const searchParams = useSearchParams()
-  const category = searchParams.get('category') || undefined
-  const sort = searchParams.get('sort') || undefined
-  const skinType = searchParams.get('skin') || undefined
-  const search = searchParams.get('search') || undefined
-
-  const { data: products, isLoading } = useProducts({ category, sort, skinType, search })
-
-  const handleSort = (value: string) => {
-    const params = new URLSearchParams(searchParams.toString())
-    if (value === 'default') {
-      params.delete('sort')
-    } else {
-      params.set('sort', value)
-    }
-    window.location.href = `/products?${params.toString()}`
-  }
+  const categories = [
+    { slug: 'skincare', name: getCategoryName('skincare') },
+    { slug: 'makeup', name: getCategoryName('makeup') },
+    { slug: 'hair', name: getCategoryName('hair') },
+    { slug: 'masks', name: getCategoryName('masks') },
+  ]
 
   return (
-    <main>
+    <main className="min-h-screen flex flex-col">
       <Header />
-      <div className="bg-gray-100 py-3">
-        <div className="container mx-auto px-5">
-          <Link href="/" className="text-gray-600 hover:text-primary">
-            Нүүр
-          </Link>{' '}
-          / <span>{search ? `"${search}" хайлт` : getCategoryName(category || null)}</span>
-        </div>
-      </div>
-
-      <section className="py-10">
-        <div className="container mx-auto px-5">
-          <div className="flex flex-col md:flex-row gap-8">
-            <aside className="w-full md:w-64 bg-white p-5 rounded-lg border border-gray-200 h-fit sticky top-24">
-              <h3 className="text-lg font-semibold mb-5">Шүүлт</h3>
-
-              <div className="mb-6">
-                <h4 className="font-semibold mb-3 text-sm">Ангилал</h4>
-                <div className="space-y-2 text-sm">
-                  {[
-                    { value: 'skincare', label: 'Гоо сайхан' },
-                    { value: 'makeup', label: 'Нүүрний будаг' },
-                    { value: 'hair', label: 'Үсний бүтээгдэхүүн' },
-                    { value: 'masks', label: 'Маск' },
-                    { value: 'suncare', label: 'Нарнаас хамгаалах' },
-                    { value: 'body', label: 'Биеийн арчилгаа' },
-                  ].map((cat) => (
-                    <Link
-                      key={cat.value}
-                      href={`/products?category=${cat.value}`}
-                      className={`block py-1 hover:text-primary transition ${
-                        category === cat.value ? 'text-primary font-medium' : ''
-                      }`}
-                    >
-                      {cat.label}
-                    </Link>
-                  ))}
-                  <Link href="/products" className="block py-1 text-primary hover:underline mt-2">
-                    Бүгдийг харах
-                  </Link>
+      <div className="container py-8 flex gap-8">
+        <aside className="w-48 shrink-0">
+          <h3 className="font-semibold mb-2">Ангилал</h3>
+          <ul className="space-y-1">
+            <li>
+              <Link href="/products" className={!params.category ? 'text-primary font-medium' : 'text-gray-600 hover:text-primary'}>
+                Бүгд
+              </Link>
+            </li>
+            {categories.map((c) => (
+              <li key={c.slug}>
+                <Link
+                  href={`/products?category=${c.slug}`}
+                  className={params.category === c.slug ? 'text-primary font-medium' : 'text-gray-600 hover:text-primary'}
+                >
+                  {c.name}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </aside>
+        <div className="flex-1">
+          <h1 className="text-2xl font-bold mb-6">Бүтээгдэхүүн</h1>
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+            {(products ?? []).map((p) => (
+              <Link key={p.id} href={`/products/${p.slug}`} className="border rounded-lg overflow-hidden hover:shadow-md transition">
+                <Image src={p.image} alt={p.name} width={400} height={400} className="w-full aspect-square object-cover" />
+                <div className="p-3">
+                  <p className="font-medium line-clamp-2">{p.name}</p>
+                  <p className="text-primary font-semibold">{formatPrice(p.price)}</p>
                 </div>
-              </div>
-
-              <div className="mb-6">
-                <h4 className="font-semibold mb-3 text-sm">Арьсны төрөл</h4>
-                <div className="space-y-2 text-sm">
-                  {[
-                    { value: 'normal', label: 'Хэвийн' },
-                    { value: 'oily', label: 'Тослог' },
-                    { value: 'dry', label: 'Хуурай' },
-                    { value: 'sensitive', label: 'Мэдрэмтгий' },
-                  ].map((skin) => (
-                    <Link
-                      key={skin.value}
-                      href={`/products?skin=${skin.value}`}
-                      className={`block py-1 hover:text-primary transition ${
-                        skinType === skin.value ? 'text-primary font-medium' : ''
-                      }`}
-                    >
-                      {skin.label}
-                    </Link>
-                  ))}
-                </div>
-              </div>
-            </aside>
-
-            <div className="flex-1">
-              <div className="flex justify-between items-center mb-6">
-                <h2 className="text-2xl font-bold">
-                  {search ? `"${search}" хайлтын үр дүн` : getCategoryName(category || null)}
-                </h2>
-                <div className="flex items-center gap-3">
-                  <label className="text-sm">Эрэмбэлэх:</label>
-                  <select
-                    value={sort || 'default'}
-                    onChange={(e) => handleSort(e.target.value)}
-                    className="px-4 py-2 border border-gray-300 rounded"
-                  >
-                    <option value="default">Анхны байдал</option>
-                    <option value="price-low">Үнэ: Багаас их рүү</option>
-                    <option value="price-high">Үнэ: Ихээс бага руу</option>
-                    <option value="new">Шинэ</option>
-                    <option value="popular">Алдартай</option>
-                  </select>
-                </div>
-              </div>
-
-              {isLoading ? (
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-                  {[...Array(8)].map((_, i) => (
-                    <div key={i} className="bg-gray-200 rounded-lg h-80 animate-pulse" />
-                  ))}
-                </div>
-              ) : !products || products.length === 0 ? (
-                <div className="text-center py-20">
-                  <h3 className="text-xl font-semibold mb-2">Бүтээгдэхүүн олдсонгүй</h3>
-                  <p className="text-gray-600">Таны шүүлтэд тохирох бүтээгдэхүүн байхгүй байна.</p>
-                </div>
-              ) : (
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-                  {products.map((product) => (
-                    <ProductCard key={product.id} product={product} />
-                  ))}
-                </div>
-              )}
-            </div>
+              </Link>
+            ))}
           </div>
         </div>
-      </section>
-
+      </div>
       <Footer />
     </main>
-  )
-}
-
-export default function ProductsPage() {
-  return (
-    <Suspense
-      fallback={
-        <div className="text-center py-20">Ачааллаж байна...</div>
-      }
-    >
-      <ProductsContent />
-    </Suspense>
   )
 }

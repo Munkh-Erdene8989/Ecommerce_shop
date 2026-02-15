@@ -3,432 +3,206 @@
 import { useState, useEffect } from 'react'
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
+import Link from 'next/link'
+import Image from 'next/image'
 import { useCart } from '@/contexts/CartContext'
 import { useAuth } from '@/lib/providers/AuthProvider'
-import { useCreateOrder } from '@/lib/hooks/use-orders'
 import { formatPrice } from '@/lib/utils'
-import Image from 'next/image'
-import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import axios from 'axios'
 
 export default function CheckoutPage() {
   const { cart, getTotal, clearCart } = useCart()
-  const { user } = useAuth()
-  const createOrder = useCreateOrder()
+  const { user, session } = useAuth()
   const router = useRouter()
-
-  const [paymentMethod, setPaymentMethod] = useState('qpay')
   const [loading, setLoading] = useState(false)
-  const [qpayData, setQpayData] = useState<{
-    qr_image: string
-    urls: Array<{ name: string; logo: string; link: string }>
-    orderId: string
-  } | null>(null)
-  const [checkingPayment, setCheckingPayment] = useState(false)
-
-  const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    phone: '',
-    city: 'Улаанбаатар',
-    district: '',
-    address: '',
-  })
+  const [qpay, setQpay] = useState<{ qr_image: string; urls: { name: string; link: string }[]; orderId: string } | null>(null)
+  const [checking, setChecking] = useState(false)
+  const [form, setForm] = useState({ name: '', email: '', phone: '', city: 'Улаанбаатар', district: '', address: '' })
 
   const subtotal = getTotal()
-  const shippingCost = subtotal >= 60000 ? 0 : 5000
-  const total = subtotal + shippingCost
+  const shipping = subtotal >= 60000 ? 0 : 5000
+  const total = subtotal + shipping
 
   useEffect(() => {
-    if (cart.length === 0 && !qpayData) {
-      router.push('/cart')
-    }
-  }, [cart, router, qpayData])
+    if (!user && !session) return
+    setForm((f) => ({
+      ...f,
+      email: user?.email ?? f.email,
+      name: (user?.user_metadata?.full_name ?? user?.user_metadata?.name ?? '') || f.name,
+    }))
+  }, [user, session])
 
-  // Auto-fill user info
   useEffect(() => {
-    if (user) {
-      setFormData((prev) => ({
-        ...prev,
-        email: user.email || prev.email,
-        name: user.user_metadata?.full_name || user.user_metadata?.name || prev.name,
-      }))
-    }
-  }, [user])
+    if (cart.length === 0 && !qpay) router.push('/cart')
+  }, [cart, qpay, router])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (!user || !session) {
+      router.push('/login?next=/checkout')
+      return
+    }
     setLoading(true)
-
     try {
-      if (!user) {
-        router.push('/login')
-        return
-      }
-
-      // Create order in Supabase
-      const order = await createOrder.mutateAsync({
-        order: {
-          user_id: user.id,
-          total,
-          subtotal,
-          shipping_cost: shippingCost,
-          payment_method: paymentMethod,
-          shipping_address: {
-            city: formData.city,
-            district: formData.district,
-            address: formData.address,
+      const token = session.access_token
+      const createRes = await fetch('/api/graphql', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({
+          query: `mutation CreateOrder($input: CreateOrderInput!) {
+            createOrder(input: $input) { id }
+          }`,
+          variables: {
+            input: {
+              user_id: user.id,
+              subtotal,
+              shipping_cost: shipping,
+              total,
+              payment_method: 'qpay',
+              shipping_address: { city: form.city, district: form.district, address: form.address },
+              customer_info: { name: form.name, email: form.email, phone: form.phone },
+              items: cart.map((i) => ({
+                product_id: i.id,
+                product_name: i.name,
+                quantity: i.quantity,
+                price: i.price,
+              })),
+            },
           },
-          customer_info: {
-            name: formData.name,
-            email: formData.email,
-            phone: formData.phone,
-          },
-        },
-        items: cart.map((item) => ({
-          product_id: item.id.toString(),
-          product_name: item.name,
-          quantity: item.quantity,
-          price: item.price,
-        })),
+        }),
       })
+      const createJson = await createRes.json()
+      const orderId = createJson?.data?.createOrder?.id
+      if (!orderId) throw new Error(createJson?.errors?.[0]?.message ?? 'Order create failed')
 
-      if (paymentMethod === 'qpay') {
-        // Create QPay invoice
-        const response = await axios.post('/api/qpay/create-invoice', {
-          orderId: order.id,
-          amount: total,
-          description: `AZ Beauty захиалга #${order.id.slice(0, 8)}`,
+      const payRes = await fetch('/api/payments/qpay/create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ orderId, amount: total, description: `AZ Beauty #${orderId.slice(0, 8)}` }),
+      })
+      const payData = await payRes.json()
+      if (!payRes.ok) throw new Error(payData.error ?? 'QPay create failed')
+      setQpay({
+        qr_image: payData.qr_image ?? '',
+        urls: payData.urls ?? [],
+        orderId,
+      })
+      clearCart()
+      const interval = setInterval(async () => {
+        setChecking(true)
+        const checkRes = await fetch(`/api/payments/qpay/check?invoice_id=${payData.invoice_id}`, {
+          headers: { Authorization: `Bearer ${token}` },
         })
-
-        setQpayData({
-          qr_image: response.data.qr_image,
-          urls: response.data.urls || [],
-          orderId: order.id,
-        })
-
-        // Start polling for payment
-        startPaymentCheck(order.id)
-      } else if (paymentMethod === 'cash') {
-        clearCart()
-        router.push(`/order-success?orderId=${order.id}`)
-      }
-    } catch (error) {
-      console.error('Checkout error:', error)
-      alert('Захиалга хийхэд алдаа гарлаа. Дахин оролдоно уу.')
+        const checkData = await checkRes.json()
+        setChecking(false)
+        if (checkData.status === 'PAID') {
+          clearInterval(interval)
+          router.push(`/checkout/success?order_id=${orderId}`)
+        }
+      }, 4000)
+      setTimeout(() => clearInterval(interval), 120000)
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Алдаа гарлаа')
     } finally {
       setLoading(false)
     }
   }
 
-  const startPaymentCheck = (orderId: string) => {
-    setCheckingPayment(true)
-    const interval = setInterval(async () => {
-      try {
-        const response = await axios.post('/api/qpay/check', { orderId })
-        if (response.data.status === 'paid') {
-          clearInterval(interval)
-          setCheckingPayment(false)
-          clearCart()
-          router.push(`/order-success?orderId=${orderId}`)
-        }
-      } catch {
-        // Continue polling
-      }
-    }, 5000)
-
-    // Stop checking after 10 minutes
-    setTimeout(() => {
-      clearInterval(interval)
-      setCheckingPayment(false)
-    }, 600000)
-  }
-
-  if (cart.length === 0 && !qpayData) {
-    return null
-  }
-
-  // QPay Payment Modal
-  if (qpayData) {
+  if (qpay) {
     return (
-      <main>
+      <main className="min-h-screen flex flex-col">
         <Header />
-        <section className="py-10">
-          <div className="container mx-auto px-5 max-w-lg">
-            <div className="bg-white border border-gray-200 rounded-xl p-8 text-center">
-              <h2 className="text-2xl font-bold mb-2">QPay төлбөр</h2>
-              <p className="text-gray-600 mb-6">
-                Доорх QR кодыг банкны апп-аар уншуулна уу
-              </p>
-
-              {/* QR Code */}
-              {qpayData.qr_image && (
-                <div className="mb-6">
-                  <img
-                    src={`data:image/png;base64,${qpayData.qr_image}`}
-                    alt="QPay QR Code"
-                    className="mx-auto w-64 h-64"
-                  />
-                </div>
-              )}
-
-              {/* Amount */}
-              <div className="text-2xl font-bold text-primary mb-6">
-                {formatPrice(total)}
-              </div>
-
-              {/* Bank Links */}
-              {qpayData.urls && qpayData.urls.length > 0 && (
-                <div className="mb-6">
-                  <p className="text-sm text-gray-500 mb-3">Банкны апп сонгох:</p>
-                  <div className="grid grid-cols-4 gap-3">
-                    {qpayData.urls.map((url, i) => (
-                      <a
-                        key={i}
-                        href={url.link}
-                        className="flex flex-col items-center p-2 border border-gray-200 rounded-lg hover:border-primary transition"
-                      >
-                        <img src={url.logo} alt={url.name} className="w-10 h-10 mb-1" />
-                        <span className="text-xs">{url.name}</span>
-                      </a>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Status */}
-              {checkingPayment && (
-                <div className="flex items-center justify-center gap-2 text-gray-600">
-                  <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-                  <span className="text-sm">Төлбөр хүлээж байна...</span>
-                </div>
-              )}
-
-              <Link
-                href="/"
-                className="inline-block mt-6 text-sm text-gray-500 hover:text-gray-700"
-              >
-                Нүүр хуудас руу буцах
-              </Link>
-            </div>
+        <div className="container py-8 max-w-md mx-auto text-center">
+          <h1 className="text-2xl font-bold mb-4">QPay-аар төлөх</h1>
+          {qpay.qr_image && <Image src={qpay.qr_image} alt="QR" width={256} height={256} className="mx-auto mb-4" unoptimized />}
+          <p className="text-gray-600 mb-4">{checking ? 'Төлбөр шалгаж байна...' : 'QR кодыг уншуулна уу.'}</p>
+          <div className="space-y-2">
+            {qpay.urls.map((u) => (
+              <a key={u.name} href={u.link} target="_blank" rel="noopener noreferrer" className="block text-primary hover:underline">
+                {u.name}
+              </a>
+            ))}
           </div>
-        </section>
+          <Link href={`/checkout/success?order_id=${qpay.orderId}`} className="mt-6 inline-block text-primary hover:underline">
+            Төлбөр төлсөн бол энд дарна уу
+          </Link>
+        </div>
         <Footer />
       </main>
     )
   }
 
   return (
-    <main>
+    <main className="min-h-screen flex flex-col">
       <Header />
-      <div className="bg-gray-100 py-3">
-        <div className="container mx-auto px-5">
-          <Link href="/" className="text-gray-600 hover:text-primary">
-            Нүүр
-          </Link>{' '}
-          /{' '}
-          <Link href="/cart" className="text-gray-600 hover:text-primary">
-            Сагс
-          </Link>{' '}
-          / <span>Захиалга хийх</span>
-        </div>
+      <div className="container py-8">
+        <h1 className="text-2xl font-bold mb-6">Захиалга</h1>
+        <form onSubmit={handleSubmit} className="max-w-lg space-y-4">
+          <div>
+            <label className="block text-sm font-medium mb-1">Нэр</label>
+            <input
+              type="text"
+              value={form.name}
+              onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
+              className="w-full border rounded-lg px-4 py-2"
+              required
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-1">Имэйл</label>
+            <input
+              type="email"
+              value={form.email}
+              onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
+              className="w-full border rounded-lg px-4 py-2"
+              required
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-1">Утас</label>
+            <input
+              type="text"
+              value={form.phone}
+              onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))}
+              className="w-full border rounded-lg px-4 py-2"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-1">Хот</label>
+            <input
+              type="text"
+              value={form.city}
+              onChange={(e) => setForm((f) => ({ ...f, city: e.target.value }))}
+              className="w-full border rounded-lg px-4 py-2"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-1">Дүүрэг / Хаяг</label>
+            <input
+              type="text"
+              value={form.district}
+              onChange={(e) => setForm((f) => ({ ...f, district: e.target.value }))}
+              placeholder="Дүүрэг"
+              className="w-full border rounded-lg px-4 py-2 mb-2"
+            />
+            <input
+              type="text"
+              value={form.address}
+              onChange={(e) => setForm((f) => ({ ...f, address: e.target.value }))}
+              placeholder="Дэлгэрэнгүй хаяг"
+              className="w-full border rounded-lg px-4 py-2"
+            />
+          </div>
+          <p className="font-medium">Нийт: {formatPrice(total)}</p>
+          <button
+            type="submit"
+            disabled={loading || cart.length === 0}
+            className="px-6 py-3 bg-primary text-white rounded-lg font-semibold hover:bg-primary-dark disabled:opacity-50"
+          >
+            {loading ? 'Бэлтгэж байна...' : 'QPay-аар төлөх'}
+          </button>
+        </form>
       </div>
-
-      {!user && (
-        <div className="bg-yellow-50 border-b border-yellow-200">
-          <div className="container mx-auto px-5 py-3 flex items-center justify-between">
-            <span className="text-sm text-yellow-800">
-              Захиалга хийхийн тулд нэвтрэх шаардлагатай
-            </span>
-            <Link
-              href="/login"
-              className="text-sm bg-primary text-white px-4 py-1 rounded hover:bg-secondary transition"
-            >
-              Нэвтрэх
-            </Link>
-          </div>
-        </div>
-      )}
-
-      <section className="py-10">
-        <div className="container mx-auto px-5">
-          <h1 className="text-3xl font-bold mb-8">Захиалга хийх</h1>
-          <div className="grid md:grid-cols-3 gap-8">
-            <div className="md:col-span-2">
-              <form onSubmit={handleSubmit} className="space-y-6">
-                {/* Customer Info */}
-                <div className="bg-white border border-gray-200 rounded-lg p-6">
-                  <h2 className="text-xl font-bold mb-4">Худалдан авагчийн мэдээлэл</h2>
-                  <div className="grid md:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block mb-2 font-semibold">Нэр *</label>
-                      <input
-                        type="text"
-                        required
-                        value={formData.name}
-                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                        className="w-full px-4 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-primary focus:border-primary outline-none"
-                      />
-                    </div>
-                    <div>
-                      <label className="block mb-2 font-semibold">Имэйл *</label>
-                      <input
-                        type="email"
-                        required
-                        value={formData.email}
-                        onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                        className="w-full px-4 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-primary focus:border-primary outline-none"
-                      />
-                    </div>
-                    <div>
-                      <label className="block mb-2 font-semibold">Утас *</label>
-                      <input
-                        type="tel"
-                        required
-                        value={formData.phone}
-                        onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                        className="w-full px-4 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-primary focus:border-primary outline-none"
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                {/* Shipping Address */}
-                <div className="bg-white border border-gray-200 rounded-lg p-6">
-                  <h2 className="text-xl font-bold mb-4">Хүргэх хаяг</h2>
-                  <div className="grid md:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block mb-2 font-semibold">Хот *</label>
-                      <input
-                        type="text"
-                        required
-                        value={formData.city}
-                        onChange={(e) => setFormData({ ...formData, city: e.target.value })}
-                        className="w-full px-4 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-primary focus:border-primary outline-none"
-                      />
-                    </div>
-                    <div>
-                      <label className="block mb-2 font-semibold">Дүүрэг *</label>
-                      <input
-                        type="text"
-                        required
-                        value={formData.district}
-                        onChange={(e) => setFormData({ ...formData, district: e.target.value })}
-                        className="w-full px-4 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-primary focus:border-primary outline-none"
-                      />
-                    </div>
-                    <div className="md:col-span-2">
-                      <label className="block mb-2 font-semibold">Дэлгэрэнгүй хаяг *</label>
-                      <textarea
-                        required
-                        value={formData.address}
-                        onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                        rows={3}
-                        className="w-full px-4 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-primary focus:border-primary outline-none"
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                {/* Payment Method */}
-                <div className="bg-white border border-gray-200 rounded-lg p-6">
-                  <h2 className="text-xl font-bold mb-4">Төлбөрийн арга</h2>
-                  <div className="space-y-3">
-                    <label className="flex items-center gap-3 p-4 border-2 border-gray-200 rounded-lg cursor-pointer hover:border-primary transition">
-                      <input
-                        type="radio"
-                        name="payment"
-                        value="qpay"
-                        checked={paymentMethod === 'qpay'}
-                        onChange={(e) => setPaymentMethod(e.target.value)}
-                        className="w-5 h-5"
-                      />
-                      <div>
-                        <span className="font-medium">QPay</span>
-                        <p className="text-xs text-gray-500">
-                          Бүх банкны апп-аар QR код уншуулж төлөх
-                        </p>
-                      </div>
-                    </label>
-                    <label className="flex items-center gap-3 p-4 border-2 border-gray-200 rounded-lg cursor-pointer hover:border-primary transition">
-                      <input
-                        type="radio"
-                        name="payment"
-                        value="cash"
-                        checked={paymentMethod === 'cash'}
-                        onChange={(e) => setPaymentMethod(e.target.value)}
-                        className="w-5 h-5"
-                      />
-                      <div>
-                        <span className="font-medium">Бэлэн мөнгө</span>
-                        <p className="text-xs text-gray-500">Хүргэлтээр бэлнээр төлөх</p>
-                      </div>
-                    </label>
-                    <label className="flex items-center gap-3 p-4 border-2 border-gray-200 rounded-lg cursor-pointer hover:border-primary transition">
-                      <input
-                        type="radio"
-                        name="payment"
-                        value="bank"
-                        checked={paymentMethod === 'bank'}
-                        onChange={(e) => setPaymentMethod(e.target.value)}
-                        className="w-5 h-5"
-                      />
-                      <div>
-                        <span className="font-medium">Банкны шилжүүлэг</span>
-                        <p className="text-xs text-gray-500">Дансны дугаар руу шилжүүлэх</p>
-                      </div>
-                    </label>
-                  </div>
-                </div>
-
-                <button
-                  type="submit"
-                  disabled={loading || !user}
-                  className="w-full bg-primary text-white py-4 rounded font-bold hover:bg-secondary transition disabled:opacity-50"
-                >
-                  {loading ? 'Захиалга хийж байна...' : 'Захиалга баталгаажуулах'}
-                </button>
-              </form>
-            </div>
-
-            {/* Order Summary */}
-            <div className="bg-white border border-gray-200 rounded-lg p-6 h-fit sticky top-24">
-              <h2 className="text-xl font-bold mb-6">Захиалгын хураангуй</h2>
-              <div className="space-y-4 mb-6">
-                {cart.map((item) => (
-                  <div key={item.id} className="flex gap-3 pb-4 border-b border-gray-200">
-                    <div className="relative w-16 h-16 bg-gray-100 rounded">
-                      <Image src={item.image} alt={item.name} fill className="object-cover rounded" unoptimized />
-                    </div>
-                    <div className="flex-1">
-                      <div className="text-sm font-medium">{item.name}</div>
-                      <div className="text-primary font-semibold">
-                        {formatPrice(item.price)} x {item.quantity}
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-              <div className="space-y-3">
-                <div className="flex justify-between">
-                  <span>Бүтээгдэхүүний үнэ:</span>
-                  <span>{formatPrice(subtotal)}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>Хүргэлт:</span>
-                  <span>{shippingCost === 0 ? 'Үнэгүй' : formatPrice(shippingCost)}</span>
-                </div>
-                <div className="border-t border-gray-200 pt-3 flex justify-between text-xl font-bold">
-                  <span>Нийт:</span>
-                  <span className="text-primary">{formatPrice(total)}</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
       <Footer />
     </main>
   )
