@@ -111,7 +111,13 @@ npm run dev
 
 - Store: `/`, `/products`, `/products/[slug]`, `/category/[slug]`, `/cart`, `/checkout`, `/checkout/success`, `/account/orders`
 - Auth: `/login`, `/auth/callback`
-- Admin: `/admin`, `/admin/products`, `/admin/orders`, `/admin/customers`, `/admin/inventory`, `/admin/promotions/coupons`, `/admin/marketing`, `/admin/settings`
+- Admin: `/admin`, `/admin/products`, `/admin/orders`, `/admin/customers`, `/admin/inventory`, `/admin/promotions/coupons`, `/admin/marketing`, `/admin/settings`, `/admin/audit`
+
+### Admin roles and store settings
+
+- **Admin roles** (middleware + GraphQL): `profiles.role IN ('owner','admin','manager','support')` — бүгд `/admin/*` руу нэвтэрнэ. SQL helper: `public.is_admin(uid)`.
+- **Support role**: Захиалгын төлөв шинэчлэх + дотоод тэмдэглэл (order status + internal notes) боломжтой. **Бүтээгдэхүүний үнэ засах** (price, cost_price, original_price) нь Support дээр **идэвхгүй** — UI дээр эдгээр талбарыг disabled эсвэл нуух нь зөвлөмж (одоогийн хувилбарт бүх админ эрхтэй хэрэглэгч засварлах боломжтой; ирээдүйд support-д price талбаруудыг хаах боломжтой).
+- **Store settings**: Нэмэлт хүснэгт `store_settings` (key/value, жишээ нь `general` → `{ store_name, logo_url, shipping_rate, free_shipping_threshold, tax_rate }`). Migration: `003_admin_audit_settings.sql`. Admin → Тохиргоо хуудаснаас засна.
 
 ## 4. Owner bootstrap
 

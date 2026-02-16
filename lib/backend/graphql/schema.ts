@@ -88,6 +88,7 @@ export const typeDefs = `#graphql
     status: String!
     payment_method: String!
     payment_status: String!
+    internal_notes: String
     qpay_invoice_id: String
     qpay_qr_text: String
     qpay_urls: JSON
@@ -159,6 +160,36 @@ export const typeDefs = `#graphql
     offset: Int
   }
 
+  type StoreSettings {
+    store_name: String
+    logo_url: String
+    shipping_rate: Int
+    free_shipping_threshold: Int
+    tax_rate: Float
+  }
+
+  type MarketingEventRow {
+    id: ID!
+    event_name: String!
+    page: String
+    utm_source: String
+    utm_medium: String
+    utm_campaign: String
+    product_id: ID
+    order_id: ID
+    value: Float
+    created_at: String!
+  }
+
+  type AuditLogRow {
+    id: ID!
+    user_id: ID
+    action: String!
+    entity_type: String!
+    entity_id: String
+    created_at: String!
+  }
+
   type Query {
     me: Profile
     products(filter: ProductsFilter, sort: String, limit: Int, offset: Int): [Product!]!
@@ -166,11 +197,23 @@ export const typeDefs = `#graphql
     categories: [Category!]!
     brands: [Brand!]!
     adminProducts(paging: PagingInput, filter: ProductsFilter): [Product!]!
+    adminProduct(id: ID!): Product
+    adminProductsTotal(filter: ProductsFilter): Int!
     myOrders(paging: PagingInput): [Order!]!
     adminOrders(paging: PagingInput, status: String): [Order!]!
+    adminOrdersTotal(status: String): Int!
+    adminOrder(id: ID!): Order
     adminCustomers(paging: PagingInput): [Customer!]!
+    adminCustomersTotal: Int!
     dashboardStats(range: String): DashboardStats!
     marketingEventCounts(range: String): [MarketingEventAgg!]!
+    adminMarketingEvents(paging: PagingInput, event_name: String, utm_campaign: String): [MarketingEventRow!]!
+    adminMarketingEventsTotal(event_name: String, utm_campaign: String): Int!
+    adminCoupons(paging: PagingInput): [Coupon!]!
+    adminCouponsTotal: Int!
+    storeSettings: StoreSettings
+    adminAuditLogs(paging: PagingInput, entity_type: String): [AuditLogRow!]!
+    adminAuditLogsTotal(entity_type: String): Int!
   }
 
   input CreateProductInput {
@@ -244,6 +287,26 @@ export const typeDefs = `#graphql
     order_id: ID!
     status: String
     payment_status: String
+    internal_notes: String
+  }
+
+  input UpdateCouponInput {
+    id: ID!
+    code: String
+    type: String
+    value: Int
+    min_order_amount: Int
+    max_uses: Int
+    valid_from: String
+    valid_until: String
+  }
+
+  input StoreSettingsInput {
+    store_name: String
+    logo_url: String
+    shipping_rate: Int
+    free_shipping_threshold: Int
+    tax_rate: Float
   }
 
   input CreateCouponInput {
@@ -265,6 +328,8 @@ export const typeDefs = `#graphql
     createOrder(input: CreateOrderInput!): Order!
     updateOrderStatus(input: UpdateOrderStatusInput!): Order!
     createCoupon(input: CreateCouponInput!): Coupon!
+    updateCoupon(input: UpdateCouponInput!): Coupon!
     deleteCoupon(id: ID!): Boolean!
+    updateStoreSettings(input: StoreSettingsInput!): StoreSettings!
   }
 `

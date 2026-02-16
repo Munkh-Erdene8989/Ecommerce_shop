@@ -1,17 +1,20 @@
-export function formatPrice(price: number): string {
-  return new Intl.NumberFormat('mn-MN').format(price) + '₮'
+import { clsx, type ClassValue } from "clsx"
+import { twMerge } from "tailwind-merge"
+
+export function cn(...inputs: ClassValue[]) {
+  return twMerge(clsx(inputs))
 }
 
-export function cn(...classes: (string | boolean | undefined | null)[]): string {
-  return classes.filter(Boolean).join(' ')
+export function formatPrice(amount: number): string {
+  return `${amount.toLocaleString()}₮`
 }
 
 export function getStatusText(status: string): string {
   const map: Record<string, string> = {
     pending: 'Хүлээгдэж буй',
     paid: 'Төлөгдсөн',
-    processing: 'Бэлтгэж байна',
-    shipped: 'Илгээсэн',
+    processing: 'Бэлтгэж буй',
+    shipped: 'Илгээгдсэн',
     delivered: 'Хүргэгдсэн',
     cancelled: 'Цуцлагдсан',
     failed: 'Амжилтгүй',
@@ -19,14 +22,12 @@ export function getStatusText(status: string): string {
   return map[status] ?? status
 }
 
-export function getCategoryName(category: string): string {
+export function getCategoryName(slug: string): string {
   const map: Record<string, string> = {
     skincare: 'Арьс арчилгаа',
-    makeup: 'Нүүрний будаг',
-    hair: 'Үсний бүтээгдэхүүн',
+    makeup: 'Гоо сайхан',
+    hair: 'Үс',
     masks: 'Маск',
-    suncare: 'Нарнаас хамгаалах',
-    body: 'Биеийн арчилгаа',
   }
-  return map[category] ?? category
+  return map[slug] ?? slug
 }

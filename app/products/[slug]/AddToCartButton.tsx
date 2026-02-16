@@ -24,7 +24,7 @@ export default function AddToCartButton({ product }: { product: Product }) {
       type="button"
       onClick={handleAdd}
       disabled={!product.in_stock}
-      className="px-6 py-3 bg-primary text-white rounded-lg font-semibold hover:bg-primary-dark disabled:opacity-50 disabled:cursor-not-allowed"
+      className="px-6 py-3 bg-primary text-white rounded-full font-medium hover:bg-primary-dark disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
     >
       {product.in_stock ? 'Сагсанд нэмэх' : 'Дууссан'}
     </button>

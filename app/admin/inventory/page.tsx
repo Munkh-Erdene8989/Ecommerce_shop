@@ -1,79 +1,159 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-import { useAuth } from '@/lib/providers/AuthProvider'
-import Link from 'next/link'
+import { useState } from 'react'
+import { useMutation, useQuery } from '@apollo/client'
+import { gql } from '@apollo/client'
+import toast from 'react-hot-toast'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
+import { Skeleton } from '@/components/ui/skeleton'
+import { ADMIN_PRODUCTS } from '@/lib/admin/graphql'
 
-interface Product {
-  id: string
-  name: string
-  slug: string
-  stock_quantity: number
-  in_stock: boolean
-}
+const ADJUST_INVENTORY = gql`
+  mutation AdjustInventory($input: UpdateStockInput!) {
+    adjustInventory(input: $input)
+  }
+`
 
 export default function AdminInventoryPage() {
-  const { session } = useAuth()
-  const [products, setProducts] = useState<Product[]>([])
-  const [loading, setLoading] = useState(true)
+  const [productId, setProductId] = useState('')
+  const [quantityDelta, setQuantityDelta] = useState('')
+  const [reason, setReason] = useState('')
 
-  useEffect(() => {
-    if (!session?.access_token) return
-    fetch('/api/graphql', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
-      body: JSON.stringify({
-        query: `query { adminProducts(paging: { limit: 100 }) { id name slug stock_quantity in_stock } }`,
-      }),
-    })
-      .then((r) => r.json())
-      .then((data) => setProducts(data?.data?.adminProducts ?? []))
-      .catch(() => setProducts([]))
-      .finally(() => setLoading(false))
-  }, [session?.access_token])
+  const { data: productsData } = useQuery(ADMIN_PRODUCTS, {
+    variables: { paging: { limit: 500, offset: 0 } },
+  })
+  const products = productsData?.adminProducts ?? []
 
-  if (loading) return <p>Ачааллаж байна...</p>
+  const [adjustInventory, { loading }] = useMutation(ADJUST_INVENTORY, {
+    refetchQueries: [{ query: ADMIN_PRODUCTS, variables: { paging: { limit: 500, offset: 0 } } }],
+  })
 
-  const lowStock = products.filter((p) => p.stock_quantity < 10)
-  const outOfStock = products.filter((p) => !p.in_stock)
+  const handleAdjust = async (e: React.FormEvent) => {
+    e.preventDefault()
+    const pid = productId.trim()
+    const delta = parseInt(quantityDelta, 10)
+    const r = reason.trim()
+    if (!pid || isNaN(delta) || delta === 0 || !r) {
+      toast.error('Бүтээгдэхүүн сонгоно уу, тоо хэмжээ болон шалтгаан оруулна уу.')
+      return
+    }
+    try {
+      await adjustInventory({
+        variables: {
+          input: { product_id: pid, quantity_delta: delta, reason: r },
+        },
+      })
+      toast.success('Нөөц шинэчлэгдлээ')
+      setQuantityDelta('')
+      setReason('')
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : 'Алдаа')
+    }
+  }
 
   return (
-    <div>
-      <h1 className="text-2xl font-bold mb-6">Нөөц</h1>
-      <div className="grid grid-cols-2 gap-4 mb-6">
-        <div className="bg-yellow-50 rounded-lg p-4">
-          <p className="text-sm text-gray-600">Бага нөөц (&lt;10)</p>
-          <p className="text-xl font-bold">{lowStock.length}</p>
-        </div>
-        <div className="bg-red-50 rounded-lg p-4">
-          <p className="text-sm text-gray-600">Дууссан</p>
-          <p className="text-xl font-bold text-red-600">{outOfStock.length}</p>
-        </div>
-      </div>
-      <div className="bg-white rounded-lg shadow overflow-hidden">
-        <table className="w-full text-sm">
-          <thead className="bg-gray-50 border-b">
-            <tr>
-              <th className="text-left p-3">Бүтээгдэхүүн</th>
-              <th className="text-left p-3">Нөөц</th>
-              <th className="text-left p-3">Төлөв</th>
-            </tr>
-          </thead>
-          <tbody>
-            {products.map((p) => (
-              <tr key={p.id} className="border-b hover:bg-gray-50">
-                <td className="p-3">
-                  <Link href={`/products/${p.slug}`} className="text-primary hover:underline">
-                    {p.name}
-                  </Link>
-                </td>
-                <td className="p-3">{p.stock_quantity}</td>
-                <td className="p-3">{p.in_stock ? 'Байгаа' : 'Дууссан'}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+    <div className="space-y-6">
+      <h1 className="text-2xl font-bold">Нөөц</h1>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Нөөц тохируулах</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleAdjust} className="flex flex-wrap items-end gap-4">
+            <div className="min-w-[200px]">
+              <Label>Бүтээгдэхүүн</Label>
+              <select
+                value={productId}
+                onChange={(e) => setProductId(e.target.value)}
+                className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+                required
+              >
+                <option value="">Сонгох</option>
+                {products.map((p: { id: string; name: string }) => (
+                  <option key={p.id} value={p.id}>{p.name}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <Label>Өөрчлөлт (+/-)</Label>
+              <Input
+                type="number"
+                value={quantityDelta}
+                onChange={(e) => setQuantityDelta(e.target.value)}
+                className="mt-1 w-24"
+                placeholder="+10 / -5"
+                required
+              />
+            </div>
+            <div className="min-w-[200px]">
+              <Label>Шалтгаан</Label>
+              <Input
+                value={reason}
+                onChange={(e) => setReason(e.target.value)}
+                className="mt-1"
+                placeholder="Жишээ: захиалга, буцаалт"
+                required
+              />
+            </div>
+            <Button type="submit" disabled={loading}>
+              {loading ? 'Хадгалж байна...' : 'Хадгалах'}
+            </Button>
+          </form>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Бүтээгдэхүүний нөөц (одоогийн)</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {products.length === 0 ? (
+            <p className="text-gray-500">Бүтээгдэхүүн байхгүй.</p>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Нэр</TableHead>
+                  <TableHead>Нөөц</TableHead>
+                  <TableHead>Төлөв</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {products.map((p: { id: string; name: string; stock_quantity: number; in_stock: boolean }) => (
+                  <TableRow key={p.id}>
+                    <TableCell>{p.name}</TableCell>
+                    <TableCell>{p.stock_quantity}</TableCell>
+                    <TableCell>{p.in_stock ? 'Нөөцтэй' : 'Дууссан'}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Хөдөлгөөний түүх</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-sm text-gray-500">
+            Inventory movements нь audit_logs болон inventory_movements хүснэгтэд бүртгэгдэнэ. Дэлгэрэнгүйг Audit log хуудсаас харна уу.
+          </p>
+        </CardContent>
+      </Card>
     </div>
   )
 }

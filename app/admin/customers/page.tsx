@@ -1,68 +1,123 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-import { useAuth } from '@/lib/providers/AuthProvider'
-import { formatPrice } from '@/lib/utils'
+import { useState } from 'react'
+import { useQuery } from '@apollo/client'
+import {
+  useReactTable,
+  getCoreRowModel,
+  flexRender,
+  type ColumnDef,
+  type PaginationState,
+} from '@tanstack/react-table'
+import { ADMIN_CUSTOMERS, ADMIN_CUSTOMERS_TOTAL } from '@/lib/admin/graphql'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
+import { Skeleton } from '@/components/ui/skeleton'
+import { Button } from '@/components/ui/button'
 
-interface Customer {
-  id: string
-  email: string
-  full_name: string | null
-  phone: string | null
-  created_at: string
-  order_count?: number
-  total_spent?: number
-}
+const PAGE_SIZE = 10
 
 export default function AdminCustomersPage() {
-  const { session } = useAuth()
-  const [customers, setCustomers] = useState<Customer[]>([])
-  const [loading, setLoading] = useState(true)
+  const [pagination, setPagination] = useState<PaginationState>({ pageIndex: 0, pageSize: PAGE_SIZE })
 
-  useEffect(() => {
-    if (!session?.access_token) return
-    fetch('/api/graphql', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
-      body: JSON.stringify({
-        query: `query { adminCustomers(paging: { limit: 100 }) { id email full_name phone created_at order_count total_spent } }`,
-      }),
-    })
-      .then((r) => r.json())
-      .then((data) => setCustomers(data?.data?.adminCustomers ?? []))
-      .catch(() => setCustomers([]))
-      .finally(() => setLoading(false))
-  }, [session?.access_token])
+  const { data, loading } = useQuery(ADMIN_CUSTOMERS, {
+    variables: {
+      paging: { limit: pagination.pageSize, offset: pagination.pageIndex * pagination.pageSize },
+    },
+  })
+  const { data: totalData } = useQuery(ADMIN_CUSTOMERS_TOTAL)
 
-  if (loading) return <p>Ачааллаж байна...</p>
+  const customers = data?.adminCustomers ?? []
+  const total = totalData?.adminCustomersTotal ?? 0
+  const pageCount = Math.ceil(total / pagination.pageSize) || 1
+
+  const columns: ColumnDef<{ id: string; email: string; full_name: string | null; phone: string | null; created_at: string; order_count?: number; total_spent?: number }>[] = [
+    { accessorKey: 'email', header: 'Имэйл' },
+    { accessorKey: 'full_name', header: 'Нэр' },
+    { accessorKey: 'phone', header: 'Утас' },
+    {
+      accessorKey: 'order_count',
+      header: 'Захиалга',
+      cell: ({ getValue }) => getValue() ?? 0,
+    },
+    {
+      accessorKey: 'total_spent',
+      header: 'Нийт зарцуулсан',
+      cell: ({ getValue }) => `${Number(getValue() ?? 0).toLocaleString()}₮`,
+    },
+    {
+      accessorKey: 'created_at',
+      header: 'Бүртгүүлсэн',
+      cell: ({ getValue }) => new Date(String(getValue())).toLocaleDateString('mn-MN'),
+    },
+  ]
+
+  const table = useReactTable({
+    data: customers,
+    columns,
+    pageCount,
+    state: { pagination },
+    onPaginationChange: setPagination,
+    manualPagination: true,
+    getCoreRowModel: getCoreRowModel(),
+  })
 
   return (
-    <div>
-      <h1 className="text-2xl font-bold mb-6">Хэрэглэгчид</h1>
-      <div className="bg-white rounded-lg shadow overflow-hidden">
-        <table className="w-full text-sm">
-          <thead className="bg-gray-50 border-b">
-            <tr>
-              <th className="text-left p-3">Имэйл</th>
-              <th className="text-left p-3">Нэр</th>
-              <th className="text-left p-3">Утас</th>
-              <th className="text-left p-3">Захиалга</th>
-              <th className="text-left p-3">Нийт зарцуулсан</th>
-            </tr>
-          </thead>
-          <tbody>
-            {customers.map((c) => (
-              <tr key={c.id} className="border-b hover:bg-gray-50">
-                <td className="p-3">{c.email}</td>
-                <td className="p-3">{c.full_name ?? '-'}</td>
-                <td className="p-3">{c.phone ?? '-'}</td>
-                <td className="p-3">{c.order_count ?? 0}</td>
-                <td className="p-3">{c.total_spent != null ? formatPrice(c.total_spent) : '-'}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+    <div className="space-y-6">
+      <h1 className="text-2xl font-bold">Хэрэглэгчид</h1>
+      <Card>
+        <CardHeader>
+          <CardTitle>Жагсаалт</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {loading ? (
+            <Skeleton className="h-64 w-full" />
+          ) : customers.length === 0 ? (
+            <div className="py-12 text-center text-gray-500">Хэрэглэгч олдсонгүй.</div>
+          ) : (
+            <>
+              <Table>
+                <TableHeader>
+                  {table.getHeaderGroups().map((hg) => (
+                    <TableRow key={hg.id}>
+                      {hg.headers.map((h) => (
+                        <TableHead key={h.id}>{flexRender(h.column.columnDef.header, h.getContext())}</TableHead>
+                      ))}
+                    </TableRow>
+                  ))}
+                </TableHeader>
+                <TableBody>
+                  {table.getRowModel().rows.map((row) => (
+                    <TableRow key={row.id}>
+                      {row.getVisibleCells().map((cell) => (
+                        <TableCell key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</TableCell>
+                      ))}
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+              <div className="flex items-center justify-between border-t pt-4">
+                <p className="text-sm text-gray-500">Нийт {total} хэрэглэгч</p>
+                <div className="flex gap-2">
+                  <Button variant="outline" size="sm" onClick={() => table.previousPage()} disabled={!table.getCanPreviousPage()}>
+                    Өмнөх
+                  </Button>
+                  <Button variant="outline" size="sm" onClick={() => table.nextPage()} disabled={!table.getCanNextPage()}>
+                    Дараах
+                  </Button>
+                </div>
+              </div>
+            </>
+          )}
+        </CardContent>
+      </Card>
     </div>
   )
 }

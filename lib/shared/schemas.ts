@@ -58,6 +58,7 @@ export const updateOrderStatusSchema = z.object({
   order_id: z.string().uuid(),
   status: z.enum(ORDER_STATUSES as unknown as [string, ...string[]]).optional(),
   payment_status: z.enum(['pending', 'paid', 'failed']).optional(),
+  internal_notes: z.string().optional(),
 })
 export type UpdateOrderStatusInput = z.infer<typeof updateOrderStatusSchema>
 

@@ -9,11 +9,24 @@ import {
   createCouponSchema,
 } from '@/lib/shared'
 import { calculateCouponDiscount } from '@/lib/shared'
-import { sendOrderPlacedEmail } from '@/lib/backend/email/resend'
+import { sendOrderPlacedEmail, sendOrderStatusEmail } from '@/lib/backend/email/resend'
 import type { GraphQLContext } from './context'
 
 function supabase(_ctx: GraphQLContext) {
   return createAdminClient()
+}
+
+async function insertAudit(ctx: GraphQLContext, action: string, entityType: string, entityId: string | null, oldData: Record<string, unknown> | null, newData: Record<string, unknown> | null) {
+  const auth = await verifySupabaseToken(ctx.authHeader)
+  const db = createAdminClient()
+  await db.from('audit_logs').insert({
+    user_id: auth?.userId ?? null,
+    action,
+    entity_type: entityType,
+    entity_id: entityId,
+    old_data: oldData ?? {},
+    new_data: newData ?? {},
+  })
 }
 
 export const resolvers = {
@@ -77,6 +90,26 @@ export const resolvers = {
       return data ?? []
     },
 
+    async adminProduct(_: unknown, args: { id: string }, ctx: GraphQLContext) {
+      await requireAdmin(ctx.authHeader)
+      const { data, error } = await supabase(ctx).from('products').select('*').eq('id', args.id).single()
+      if (error || !data) return null
+      return data
+    },
+
+    async adminProductsTotal(_: unknown, args: { filter?: Record<string, unknown> }, ctx: GraphQLContext) {
+      await requireAdmin(ctx.authHeader)
+      const db = supabase(ctx)
+      let q = db.from('products').select('id', { count: 'exact', head: true })
+      const f = args.filter
+      if (f?.category) q = q.eq('category', f.category)
+      if (f?.brand) q = q.eq('brand', f.brand)
+      if (f?.search) q = q.ilike('name', `%${String(f.search)}%`)
+      const { count, error } = await q
+      if (error) throw new Error(error.message)
+      return count ?? 0
+    },
+
     async myOrders(_: unknown, args: { paging?: { limit?: number; offset?: number } }, ctx: GraphQLContext) {
       const auth = await requireAuth(ctx.authHeader)
       const limit = args.paging?.limit ?? 50
@@ -117,6 +150,23 @@ export const resolvers = {
       }))
     },
 
+    async adminOrdersTotal(_: unknown, args: { status?: string }, ctx: GraphQLContext) {
+      await requireAdmin(ctx.authHeader)
+      let q = supabase(ctx).from('orders').select('id', { count: 'exact', head: true })
+      if (args.status && args.status !== 'all') q = q.eq('status', args.status)
+      const { count, error } = await q
+      if (error) throw new Error(error.message)
+      return count ?? 0
+    },
+
+    async adminOrder(_: unknown, args: { id: string }, ctx: GraphQLContext) {
+      await requireAdmin(ctx.authHeader)
+      const { data: order, error } = await supabase(ctx).from('orders').select('*').eq('id', args.id).single()
+      if (error || !order) return null
+      const { data: items } = await supabase(ctx).from('order_items').select('*').eq('order_id', args.id)
+      return { ...order, order_items: items ?? [] }
+    },
+
     async adminCustomers(_: unknown, args: { paging?: { limit?: number; offset?: number } }, ctx: GraphQLContext) {
       await requireAdmin(ctx.authHeader)
       const limit = args.paging?.limit ?? 50
@@ -135,6 +185,13 @@ export const resolvers = {
         })
       )
       return customers
+    },
+
+    async adminCustomersTotal(_: unknown, _args: unknown, ctx: GraphQLContext) {
+      await requireAdmin(ctx.authHeader)
+      const { count, error } = await supabase(ctx).from('profiles').select('id', { count: 'exact', head: true })
+      if (error) throw new Error(error.message)
+      return count ?? 0
     },
 
     async dashboardStats(_: unknown, _args: { range?: string }, ctx: GraphQLContext) {
@@ -168,6 +225,80 @@ export const resolvers = {
         counts[r.event_name] = (counts[r.event_name] ?? 0) + 1
       })
       return Object.entries(counts).map(([event_name, count]) => ({ event_name, count }))
+    },
+
+    async adminMarketingEvents(_: unknown, args: { paging?: { limit?: number; offset?: number }; event_name?: string; utm_campaign?: string }, ctx: GraphQLContext) {
+      await requireAdmin(ctx.authHeader)
+      let q = supabase(ctx).from('marketing_events').select('*').order('created_at', { ascending: false })
+      if (args.event_name) q = q.eq('event_name', args.event_name)
+      if (args.utm_campaign) q = q.eq('utm_campaign', args.utm_campaign)
+      const limit = args.paging?.limit ?? 50
+      const offset = args.paging?.offset ?? 0
+      q = q.range(offset, offset + limit - 1)
+      const { data, error } = await q
+      if (error) throw new Error(error.message)
+      return data ?? []
+    },
+
+    async adminMarketingEventsTotal(_: unknown, args: { event_name?: string; utm_campaign?: string }, ctx: GraphQLContext) {
+      await requireAdmin(ctx.authHeader)
+      let q = supabase(ctx).from('marketing_events').select('id', { count: 'exact', head: true })
+      if (args.event_name) q = q.eq('event_name', args.event_name)
+      if (args.utm_campaign) q = q.eq('utm_campaign', args.utm_campaign)
+      const { count, error } = await q
+      if (error) throw new Error(error.message)
+      return count ?? 0
+    },
+
+    async adminCoupons(_: unknown, args: { paging?: { limit?: number; offset?: number } }, ctx: GraphQLContext) {
+      await requireAdmin(ctx.authHeader)
+      const limit = args.paging?.limit ?? 50
+      const offset = args.paging?.offset ?? 0
+      const { data, error } = await supabase(ctx).from('coupons').select('*').order('created_at', { ascending: false }).range(offset, offset + limit - 1)
+      if (error) throw new Error(error.message)
+      return data ?? []
+    },
+
+    async adminCouponsTotal(_: unknown, _args: unknown, ctx: GraphQLContext) {
+      await requireAdmin(ctx.authHeader)
+      const { count, error } = await supabase(ctx).from('coupons').select('id', { count: 'exact', head: true })
+      if (error) throw new Error(error.message)
+      return count ?? 0
+    },
+
+    async storeSettings(_: unknown, _args: unknown, ctx: GraphQLContext) {
+      const db = supabase(ctx)
+      const { data, error } = await db.from('store_settings').select('value').eq('key', 'general').single()
+      if (error || !data?.value) return { store_name: 'AZ Beauty', logo_url: '', shipping_rate: 5000, free_shipping_threshold: 60000, tax_rate: 0 }
+      const v = data.value as Record<string, unknown>
+      return {
+        store_name: v.store_name ?? 'AZ Beauty',
+        logo_url: v.logo_url ?? '',
+        shipping_rate: v.shipping_rate ?? 5000,
+        free_shipping_threshold: v.free_shipping_threshold ?? 60000,
+        tax_rate: v.tax_rate ?? 0,
+      }
+    },
+
+    async adminAuditLogs(_: unknown, args: { paging?: { limit?: number; offset?: number }; entity_type?: string }, ctx: GraphQLContext) {
+      await requireAdmin(ctx.authHeader)
+      let q = supabase(ctx).from('audit_logs').select('id, user_id, action, entity_type, entity_id, created_at').order('created_at', { ascending: false })
+      if (args.entity_type) q = q.eq('entity_type', args.entity_type)
+      const limit = args.paging?.limit ?? 50
+      const offset = args.paging?.offset ?? 0
+      q = q.range(offset, offset + limit - 1)
+      const { data, error } = await q
+      if (error) throw new Error(error.message)
+      return data ?? []
+    },
+
+    async adminAuditLogsTotal(_: unknown, args: { entity_type?: string }, ctx: GraphQLContext) {
+      await requireAdmin(ctx.authHeader)
+      let q = supabase(ctx).from('audit_logs').select('id', { count: 'exact', head: true })
+      if (args.entity_type) q = q.eq('entity_type', args.entity_type)
+      const { count, error } = await q
+      if (error) throw new Error(error.message)
+      return count ?? 0
     },
   },
 
@@ -223,6 +354,7 @@ export const resolvers = {
       }
       const { data, error } = await supabase(ctx).from('products').insert(row).select().single()
       if (error) throw new Error(error.message)
+      await insertAudit(ctx, 'create', 'product', data.id, null, data as unknown as Record<string, unknown>)
       return data
     },
 
@@ -231,17 +363,21 @@ export const resolvers = {
       const parsed = updateProductSchema.safeParse(args.input)
       if (!parsed.success) throw new Error(parsed.error.message)
       const { id, ...rest } = parsed.data
+      const { data: oldRow } = await supabase(ctx).from('products').select('*').eq('id', id).single()
       const row: Record<string, unknown> = { ...rest, updated_at: new Date().toISOString() }
       if (rest.slug === undefined) delete row.slug
       const { data, error } = await supabase(ctx).from('products').update(row).eq('id', id).select().single()
       if (error) throw new Error(error.message)
+      await insertAudit(ctx, 'update', 'product', id, oldRow as unknown as Record<string, unknown>, data as unknown as Record<string, unknown>)
       return data
     },
 
     async deleteProduct(_: unknown, args: { id: string }, ctx: GraphQLContext) {
       await requireAdmin(ctx.authHeader)
+      const { data: oldRow } = await supabase(ctx).from('products').select('*').eq('id', args.id).single()
       const { error } = await supabase(ctx).from('products').delete().eq('id', args.id)
       if (error) throw new Error(error.message)
+      await insertAudit(ctx, 'delete', 'product', args.id, oldRow as unknown as Record<string, unknown>, null)
       return true
     },
 
@@ -260,6 +396,7 @@ export const resolvers = {
         reason: parsed.data.reason,
         reference_id: parsed.data.reference_id ?? null,
       })
+      await insertAudit(ctx, 'inventory_adjust', 'inventory_movement', null, { product_id: parsed.data.product_id, previous_qty: product.stock_quantity }, { product_id: parsed.data.product_id, quantity_delta: parsed.data.quantity_delta, new_qty: newQty, reason: parsed.data.reason })
       return true
     },
 
@@ -322,11 +459,17 @@ export const resolvers = {
       await requireAdmin(ctx.authHeader)
       const parsed = updateOrderStatusSchema.safeParse(args.input)
       if (!parsed.success) throw new Error(parsed.error.message)
+      const { data: oldOrder } = await supabase(ctx).from('orders').select('status, user_id').eq('id', parsed.data.order_id).single()
       const updates: Record<string, unknown> = { updated_at: new Date().toISOString() }
-      if (parsed.data.status) updates.status = parsed.data.status
-      if (parsed.data.payment_status) updates.payment_status = parsed.data.payment_status
+      if (parsed.data.status !== undefined) updates.status = parsed.data.status
+      if (parsed.data.payment_status !== undefined) updates.payment_status = parsed.data.payment_status
+      if ((parsed.data as { internal_notes?: string }).internal_notes !== undefined) updates.internal_notes = (parsed.data as { internal_notes?: string }).internal_notes
       const { data, error } = await supabase(ctx).from('orders').update(updates).eq('id', parsed.data.order_id).select().single()
       if (error) throw new Error(error.message)
+      if (parsed.data.status !== undefined && oldOrder?.status !== parsed.data.status && oldOrder?.user_id) {
+        const { data: profile } = await supabase(ctx).from('profiles').select('email').eq('id', oldOrder.user_id).single()
+        if (profile?.email) await sendOrderStatusEmail(profile.email, parsed.data.order_id, String(parsed.data.status)).catch(() => {})
+      }
       const { data: items } = await supabase(ctx).from('order_items').select('*').eq('order_id', parsed.data.order_id)
       return { ...data, order_items: items ?? [] }
     },
@@ -349,11 +492,50 @@ export const resolvers = {
       return data
     },
 
+    async updateCoupon(_: unknown, args: { input: Record<string, unknown> }, ctx: GraphQLContext) {
+      await requireAdmin(ctx.authHeader)
+      const input = args.input as { id: string; code?: string; type?: string; value?: number; min_order_amount?: number | null; max_uses?: number | null; valid_from?: string | null; valid_until?: string | null }
+      if (!input.id) throw new Error('id required')
+      const updates: Record<string, unknown> = {}
+      if (input.code !== undefined) updates.code = input.code
+      if (input.type !== undefined) updates.type = input.type
+      if (input.value !== undefined) updates.value = input.value
+      if (input.min_order_amount !== undefined) updates.min_order_amount = input.min_order_amount
+      if (input.max_uses !== undefined) updates.max_uses = input.max_uses
+      if (input.valid_from !== undefined) updates.valid_from = input.valid_from
+      if (input.valid_until !== undefined) updates.valid_until = input.valid_until
+      if (Object.keys(updates).length === 0) {
+        const { data } = await supabase(ctx).from('coupons').select('*').eq('id', input.id).single()
+        return data
+      }
+      const { data, error } = await supabase(ctx).from('coupons').update(updates).eq('id', input.id).select().single()
+      if (error) throw new Error(error.message)
+      return data
+    },
+
     async deleteCoupon(_: unknown, args: { id: string }, ctx: GraphQLContext) {
       await requireAdmin(ctx.authHeader)
       const { error } = await supabase(ctx).from('coupons').delete().eq('id', args.id)
       if (error) throw new Error(error.message)
       return true
+    },
+
+    async updateStoreSettings(_: unknown, args: { input: Record<string, unknown> }, ctx: GraphQLContext) {
+      await requireAdmin(ctx.authHeader)
+      const input = args.input as Record<string, unknown>
+      const value = {
+        store_name: input.store_name ?? undefined,
+        logo_url: input.logo_url ?? undefined,
+        shipping_rate: input.shipping_rate ?? undefined,
+        free_shipping_threshold: input.free_shipping_threshold ?? undefined,
+        tax_rate: input.tax_rate ?? undefined,
+      }
+      const db = supabase(ctx)
+      const { data: existing } = await db.from('store_settings').select('value').eq('key', 'general').single()
+      const merged = { ...(existing?.value as Record<string, unknown> ?? {}), ...value }
+      const { error } = await db.from('store_settings').upsert({ key: 'general', value: merged, updated_at: new Date().toISOString() }, { onConflict: 'key' })
+      if (error) throw new Error(error.message)
+      return { ...merged, store_name: merged.store_name ?? 'AZ Beauty', logo_url: merged.logo_url ?? '', shipping_rate: merged.shipping_rate ?? 5000, free_shipping_threshold: merged.free_shipping_threshold ?? 60000, tax_rate: merged.tax_rate ?? 0 }
     },
   },
 

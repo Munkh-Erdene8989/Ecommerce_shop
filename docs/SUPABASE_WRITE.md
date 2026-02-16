@@ -115,3 +115,24 @@ SUPABASE_SERVICE_ROLE_KEY=<service_role key>
 ```
 
 Migration/seed нь Supabase CLI-аар ажилладаг (Dashboard эсвэл `supabase link`-ээр холбогдсон төсөл дээр). Апп-ын бичлэг нь дээрх env-ийг ашиглана.
+
+---
+
+## 7. Admin (owner) хэрэглэгч үүсгэх
+
+Анхны admin эсвэл owner хэрэглэгчийг үүсгэхийн тулд:
+
+1. **`.env.local`** дээр нэмнэ:
+   ```env
+   ADMIN_EMAIL=admin@example.com
+   ADMIN_PASSWORD=нууц-үг-оруулна
+   ```
+
+2. Скрипт ажиллуулна:
+   ```bash
+   npm run create-admin
+   ```
+
+Энэ нь Supabase Auth-д имэйл/нууц үгтэй хэрэглэгч үүсгээд `profiles` хүснэгтэд `role = 'owner'` тохируулна.
+
+3. **Нэвтрэх**: `/login` хуудас руу ороод "Имэйл + нууц үгээр нэвтрэх" сонголтоор дээрх имэйл/нууц үгээр нэвтэрч, дараа нь `/admin` руу орно.

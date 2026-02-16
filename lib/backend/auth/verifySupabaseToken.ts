@@ -37,10 +37,17 @@ export function requireAuth(authHeader: string | undefined): Promise<{ userId: s
   })
 }
 
+const ADMIN_ROLES = ['owner', 'admin', 'manager', 'support'] as const
+
 export function requireAdmin(authHeader: string | undefined): Promise<{ userId: string; profile: Profile }> {
   return verifySupabaseToken(authHeader).then((r) => {
     if (!r) throw new Error('Unauthorized')
-    if (!r.profile || (r.profile.role !== 'admin' && r.profile.role !== 'owner')) throw new Error('Forbidden')
+    if (!r.profile || !ADMIN_ROLES.includes(r.profile.role as (typeof ADMIN_ROLES)[number])) throw new Error('Forbidden')
     return r as { userId: string; profile: Profile }
   })
+}
+
+/** Support can only update order status + notes; no product price edit. */
+export function isSupportRole(profile: Profile): boolean {
+  return profile.role === 'support'
 }

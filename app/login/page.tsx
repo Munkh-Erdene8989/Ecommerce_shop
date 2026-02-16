@@ -7,13 +7,31 @@ import { useRouter, useSearchParams } from 'next/navigation'
 
 function LoginForm() {
   const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
   const [otpSent, setOtpSent] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [showPasswordLogin, setShowPasswordLogin] = useState(false)
   const router = useRouter()
   const searchParams = useSearchParams()
   const next = searchParams.get('next') ?? '/'
   const supabase = createClient()
+
+  const handlePasswordLogin = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setLoading(true)
+    setError(null)
+    try {
+      const { error: signInError } = await supabase.auth.signInWithPassword({ email, password })
+      if (signInError) throw signInError
+      router.push(next)
+      router.refresh()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Алдаа гарлаа')
+    } finally {
+      setLoading(false)
+    }
+  }
 
   const handleEmailOtp = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -91,10 +109,8 @@ function LoginForm() {
             <span className="relative flex justify-center text-sm text-gray-500 bg-gray-50 px-2">эсвэл</span>
           </div>
 
-          {otpSent ? (
-            <p className="text-green-600 text-center">Имэйл рүү илгээсэн холбоосоор нэвтрэнэ үү.</p>
-          ) : (
-            <form onSubmit={handleEmailOtp} className="space-y-4">
+          {showPasswordLogin ? (
+            <form onSubmit={handlePasswordLogin} className="space-y-4">
               <div>
                 <label className="block text-sm font-medium mb-1">Имэйл</label>
                 <input
@@ -106,15 +122,66 @@ function LoginForm() {
                   required
                 />
               </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Нууц үг</label>
+                <input
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none"
+                  placeholder="••••••••"
+                  required
+                />
+              </div>
               {error && <div className="text-red-600 text-sm">{error}</div>}
               <button
                 type="submit"
                 disabled={loading}
                 className="w-full bg-primary text-white py-3 rounded-lg font-semibold hover:bg-primary-dark disabled:opacity-50"
               >
-                {loading ? 'Илгээж байна...' : 'Имэйлээр нэвтрэх'}
+                {loading ? 'Нэвтэрч байна...' : 'Имэйл + нууц үгээр нэвтрэх'}
+              </button>
+              <button
+                type="button"
+                onClick={() => { setShowPasswordLogin(false); setError(null); }}
+                className="w-full text-gray-600 text-sm hover:underline"
+              >
+                Имэйл OTP руу буцах
               </button>
             </form>
+          ) : otpSent ? (
+            <p className="text-green-600 text-center">Имэйл рүү илгээсэн холбоосоор нэвтрэнэ үү.</p>
+          ) : (
+            <>
+              <form onSubmit={handleEmailOtp} className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium mb-1">Имэйл</label>
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none"
+                    placeholder="email@example.com"
+                    required
+                  />
+                </div>
+                {error && <div className="text-red-600 text-sm">{error}</div>}
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full bg-primary text-white py-3 rounded-lg font-semibold hover:bg-primary-dark disabled:opacity-50"
+                >
+                  {loading ? 'Илгээж байна...' : 'Имэйлээр нэвтрэх'}
+                </button>
+              </form>
+              <button
+                type="button"
+                onClick={() => setShowPasswordLogin(true)}
+                className="mt-3 w-full text-gray-500 text-sm hover:underline"
+              >
+                Имэйл + нууц үгээр нэвтрэх
+              </button>
+            </>
           )}
 
           <div className="mt-6 text-center">
