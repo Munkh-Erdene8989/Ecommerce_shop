@@ -30,6 +30,8 @@ export default function Footer() {
           <h3 className="font-medium text-white text-sm uppercase tracking-widest mb-4">Тусламж</h3>
           <ul className="space-y-3">
             <li><Link href="/account/orders" className={footerLink}>Захиалга харах</Link></li>
+            <li><Link href="/privacy-policy" className={footerLink}>Нууцлалын бодлого</Link></li>
+            <li><Link href="/userterms" className={footerLink}>Үйлчилгээний нөхцөл</Link></li>
           </ul>
         </div>
       </div>
