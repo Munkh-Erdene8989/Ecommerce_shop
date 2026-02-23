@@ -4,6 +4,17 @@ import { NextResponse, type NextRequest } from 'next/server'
 const ADMIN_ROLES = ['owner', 'admin', 'manager', 'support']
 
 export async function middleware(request: NextRequest) {
+  const path = request.nextUrl.pathname
+  const hasCode = request.nextUrl.searchParams.has('code')
+
+  // OAuth: Supabase заримдаа root (/) руу code-тай redirect хийдэг. Ийм үед /auth/callback руу дахин чиглүүлнэ.
+  if (path !== '/auth/callback' && hasCode) {
+    const callbackUrl = new URL('/auth/callback', request.url)
+    request.nextUrl.searchParams.forEach((value, key) => callbackUrl.searchParams.set(key, value))
+    if (!callbackUrl.searchParams.has('next')) callbackUrl.searchParams.set('next', path || '/')
+    return NextResponse.redirect(callbackUrl)
+  }
+
   const res = NextResponse.next()
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL
   const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
@@ -20,7 +31,6 @@ export async function middleware(request: NextRequest) {
       },
     },
   })
-  const path = request.nextUrl.pathname
 
   if (path.startsWith('/admin') || path.startsWith('/account')) {
     const { data: { user } } = await supabase.auth.getUser()
@@ -51,5 +61,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/admin', '/admin/:path*', '/account', '/account/:path*'],
+  matcher: ['/', '/admin', '/admin/:path*', '/account', '/account/:path*'],
 }

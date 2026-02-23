@@ -42,9 +42,6 @@ export default function AccountOrdersPage() {
       .catch(() => setOrders([]))
       .finally(() => setLoading(false))
   }, [session?.access_token, router])
-
-  if (!user) return null
-
   return (
     <main className="min-h-screen flex flex-col">
       <Header />

@@ -1,6 +1,6 @@
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
-import Image from 'next/image'
+import ProductImage from '@/components/ProductImage'
 import { createClient } from '@/lib/supabase/server'
 import { notFound } from 'next/navigation'
 import { formatPrice } from '@/lib/utils'
@@ -18,7 +18,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
       <div className="container py-10 md:py-14">
         <div className="grid md:grid-cols-2 gap-10 md:gap-16">
           <div className="card overflow-hidden aspect-square max-h-[480px] md:max-h-none bg-stone-50">
-            <Image src={product.image} alt={product.name} width={600} height={600} className="w-full h-full object-cover" />
+            <ProductImage src={product.image} alt={product.name} width={600} height={600} className="w-full h-full object-cover" />
           </div>
           <div>
             <h1 className="text-2xl md:text-4xl font-semibold tracking-tight mb-4 text-stone-900">{product.name}</h1>

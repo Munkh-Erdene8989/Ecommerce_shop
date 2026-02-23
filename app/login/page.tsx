@@ -11,7 +11,9 @@ function LoginForm() {
   const [otpSent, setOtpSent] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [success, setSuccess] = useState<string | null>(null)
   const [showPasswordLogin, setShowPasswordLogin] = useState(false)
+  const [isRegister, setIsRegister] = useState(false)
   const router = useRouter()
   const searchParams = useSearchParams()
   const next = searchParams.get('next') ?? '/'
@@ -21,6 +23,7 @@ function LoginForm() {
     e.preventDefault()
     setLoading(true)
     setError(null)
+    setSuccess(null)
     try {
       const { error: signInError } = await supabase.auth.signInWithPassword({ email, password })
       if (signInError) throw signInError
@@ -33,10 +36,10 @@ function LoginForm() {
     }
   }
 
-  const handleEmailOtp = async (e: React.FormEvent) => {
-    e.preventDefault()
+  const sendEmailOtp = async () => {
     setLoading(true)
     setError(null)
+    setSuccess(null)
     try {
       const { error } = await supabase.auth.signInWithOtp({
         email,
@@ -46,6 +49,34 @@ function LoginForm() {
       })
       if (error) throw error
       setOtpSent(true)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Алдаа гарлаа')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleEmailOtp = async (e: React.FormEvent) => {
+    e.preventDefault()
+    await sendEmailOtp()
+  }
+
+  const handleRegister = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setLoading(true)
+    setError(null)
+    setSuccess(null)
+    setOtpSent(false)
+    try {
+      const { error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          emailRedirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}`,
+        },
+      })
+      if (error) throw error
+      setSuccess('Бүртгэл үүсгэлээ. Имэйлээ шалгаж баталгаажуулна уу.')
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Алдаа гарлаа')
     } finally {
@@ -81,36 +112,175 @@ function LoginForm() {
       </header>
       <div className="flex-1 flex items-center justify-center py-12 px-4">
         <div className="max-w-md w-full">
-          <h1 className="text-2xl font-bold mb-6 text-center">Нэвтрэх</h1>
+          <h1 className="text-2xl font-bold mb-6 text-center">
+            {isRegister ? 'Бүртгүүлэх' : 'Нэвтрэх'}
+          </h1>
 
-          <div className="space-y-3 mb-6">
+          <div className="flex justify-center gap-2 mb-4 text-sm">
             <button
               type="button"
-              onClick={() => handleOAuth('google')}
-              disabled={loading}
-              className="w-full flex items-center justify-center gap-2 px-4 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 font-medium disabled:opacity-50"
+              onClick={() => {
+                setIsRegister(false)
+                setError(null)
+                setSuccess(null)
+              }}
+              className={`px-3 py-1 rounded-full ${
+                !isRegister ? 'bg-primary text-white' : 'text-gray-600 hover:bg-gray-100'
+              }`}
             >
-              Google-ээр нэвтрэх
+              Нэвтрэх
             </button>
             <button
               type="button"
-              onClick={() => handleOAuth('facebook')}
-              disabled={loading}
-              className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-[#1877F2] text-white rounded-lg hover:bg-[#166FE5] font-medium disabled:opacity-50"
+              onClick={() => {
+                setIsRegister(true)
+                setShowPasswordLogin(true)
+                setOtpSent(false)
+                setError(null)
+                setSuccess(null)
+              }}
+              className={`px-3 py-1 rounded-full ${
+                isRegister ? 'bg-primary text-white' : 'text-gray-600 hover:bg-gray-100'
+              }`}
             >
-              Facebook-ээр нэвтрэх
+              Бүртгүүлэх
             </button>
           </div>
 
-          <div className="relative my-6">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-gray-300" />
-            </div>
-            <span className="relative flex justify-center text-sm text-gray-500 bg-gray-50 px-2">эсвэл</span>
-          </div>
+          {success && <div className="mb-4 text-green-600 text-sm text-center">{success}</div>}
+          {error && !showPasswordLogin && !isRegister && (
+            <div className="mb-4 text-red-600 text-sm text-center">{error}</div>
+          )}
 
-          {showPasswordLogin ? (
-            <form onSubmit={handlePasswordLogin} className="space-y-4">
+          {!isRegister && (
+            <>
+              <div className="space-y-3 mb-6">
+                <button
+                  type="button"
+                  onClick={() => handleOAuth('google')}
+                  disabled={loading}
+                  className="w-full flex items-center justify-center gap-2 px-4 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 font-medium disabled:opacity-50"
+                >
+                  Google-ээр нэвтрэх
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleOAuth('facebook')}
+                  disabled={loading}
+                  className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-[#1877F2] text-white rounded-lg hover:bg-[#166FE5] font-medium disabled:opacity-50"
+                >
+                  Facebook-ээр нэвтрэх
+                </button>
+              </div>
+
+              <div className="relative my-6">
+                <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t border-gray-300" />
+                </div>
+                <span className="relative flex justify-center text-sm text-gray-500 bg-gray-50 px-2">эсвэл</span>
+              </div>
+
+              {showPasswordLogin ? (
+                <form onSubmit={handlePasswordLogin} className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Имэйл</label>
+                    <input
+                      type="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none"
+                      placeholder="email@example.com"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Нууц үг</label>
+                    <input
+                      type="password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none"
+                      placeholder="••••••••"
+                      required
+                    />
+                  </div>
+                  {error && <div className="text-red-600 text-sm">{error}</div>}
+                  <button
+                    type="submit"
+                    disabled={loading}
+                    className="w-full bg-primary text-white py-3 rounded-lg font-semibold hover:bg-primary-dark disabled:opacity-50"
+                  >
+                    {loading ? 'Нэвтэрч байна...' : 'Имэйл + нууц үгээр нэвтрэх'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowPasswordLogin(false)
+                      setError(null)
+                    }}
+                    className="w-full text-gray-600 text-sm hover:underline"
+                  >
+                    Имэйл OTP руу буцах
+                  </button>
+                </form>
+              ) : otpSent ? (
+                <div className="space-y-3">
+                  <p className="text-green-600 text-center">
+                    Имэйл рүү илгээсэн холбоосоор нэвтрэнэ үү.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={sendEmailOtp}
+                    disabled={loading}
+                    className="w-full bg-primary text-white py-3 rounded-lg font-semibold hover:bg-primary-dark disabled:opacity-50"
+                  >
+                    {loading ? 'Дахин илгээж байна...' : 'Имэйлийг дахин илгээх'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setOtpSent(false)}
+                    className="w-full text-gray-600 text-sm hover:underline"
+                  >
+                    Имэйлээ өөрчлөх
+                  </button>
+                </div>
+              ) : (
+                <>
+                  <form onSubmit={handleEmailOtp} className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium mb-1">Имэйл</label>
+                      <input
+                        type="email"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none"
+                        placeholder="email@example.com"
+                        required
+                      />
+                    </div>
+                    {error && <div className="text-red-600 text-sm">{error}</div>}
+                    <button
+                      type="submit"
+                      disabled={loading}
+                      className="w-full bg-primary text-white py-3 rounded-lg font-semibold hover:bg-primary-dark disabled:opacity-50"
+                    >
+                      {loading ? 'Илгээж байна...' : 'Имэйлээр нэвтрэх'}
+                    </button>
+                  </form>
+                  <button
+                    type="button"
+                    onClick={() => setShowPasswordLogin(true)}
+                    className="mt-3 w-full text-gray-500 text-sm hover:underline"
+                  >
+                    Имэйл + нууц үгээр нэвтрэх
+                  </button>
+                </>
+              )}
+            </>
+          )}
+
+          {isRegister && (
+            <form onSubmit={handleRegister} className="space-y-4 mt-4">
               <div>
                 <label className="block text-sm font-medium mb-1">Имэйл</label>
                 <input
@@ -131,6 +301,7 @@ function LoginForm() {
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none"
                   placeholder="••••••••"
                   required
+                  minLength={6}
                 />
               </div>
               {error && <div className="text-red-600 text-sm">{error}</div>}
@@ -139,49 +310,12 @@ function LoginForm() {
                 disabled={loading}
                 className="w-full bg-primary text-white py-3 rounded-lg font-semibold hover:bg-primary-dark disabled:opacity-50"
               >
-                {loading ? 'Нэвтэрч байна...' : 'Имэйл + нууц үгээр нэвтрэх'}
+                {loading ? 'Бүртгэж байна...' : 'Бүртгэл үүсгэх'}
               </button>
-              <button
-                type="button"
-                onClick={() => { setShowPasswordLogin(false); setError(null); }}
-                className="w-full text-gray-600 text-sm hover:underline"
-              >
-                Имэйл OTP руу буцах
-              </button>
+              <p className="text-xs text-gray-500 text-center">
+                Бүртгэл үүсгэсний дараа баталгаажуулах линк таны имэйл рүү илгээгдэнэ.
+              </p>
             </form>
-          ) : otpSent ? (
-            <p className="text-green-600 text-center">Имэйл рүү илгээсэн холбоосоор нэвтрэнэ үү.</p>
-          ) : (
-            <>
-              <form onSubmit={handleEmailOtp} className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium mb-1">Имэйл</label>
-                  <input
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none"
-                    placeholder="email@example.com"
-                    required
-                  />
-                </div>
-                {error && <div className="text-red-600 text-sm">{error}</div>}
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="w-full bg-primary text-white py-3 rounded-lg font-semibold hover:bg-primary-dark disabled:opacity-50"
-                >
-                  {loading ? 'Илгээж байна...' : 'Имэйлээр нэвтрэх'}
-                </button>
-              </form>
-              <button
-                type="button"
-                onClick={() => setShowPasswordLogin(true)}
-                className="mt-3 w-full text-gray-500 text-sm hover:underline"
-              >
-                Имэйл + нууц үгээр нэвтрэх
-              </button>
-            </>
           )}
 
           <div className="mt-6 text-center">

@@ -1,7 +1,7 @@
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
 import Link from 'next/link'
-import Image from 'next/image'
+import ProductImage from '@/components/ProductImage'
 import { createClient } from '@/lib/supabase/server'
 import { formatPrice } from '@/lib/utils'
 import { getCategoryName } from '@/lib/utils'
@@ -64,7 +64,7 @@ export default async function ProductsPage({
                 className="card overflow-hidden group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
               >
                 <div className="aspect-square overflow-hidden bg-stone-50">
-                  <Image
+                  <ProductImage
                     src={p.image}
                     alt={p.name}
                     width={400}

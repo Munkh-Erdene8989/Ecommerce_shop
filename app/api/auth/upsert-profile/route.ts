@@ -10,6 +10,10 @@ export async function POST(req: NextRequest) {
       email?: string
       full_name?: string
       avatar_url?: string
+      phone?: string
+      shipping_city?: string
+      shipping_district?: string
+      shipping_address?: string
     }
     const id = body.id ?? auth.userId
     if (id !== auth.userId) {
@@ -26,6 +30,10 @@ export async function POST(req: NextRequest) {
           email: body.email ?? undefined,
           full_name: body.full_name ?? undefined,
           avatar_url: body.avatar_url ?? undefined,
+          phone: body.phone ?? undefined,
+          shipping_city: body.shipping_city ?? undefined,
+          shipping_district: body.shipping_district ?? undefined,
+          shipping_address: body.shipping_address ?? undefined,
           updated_at: new Date().toISOString(),
         })
         .eq('id', id)
@@ -40,6 +48,10 @@ export async function POST(req: NextRequest) {
       email: body.email ?? '',
       full_name: body.full_name ?? null,
       avatar_url: body.avatar_url ?? null,
+      phone: body.phone ?? null,
+      shipping_city: body.shipping_city ?? null,
+      shipping_district: body.shipping_district ?? null,
+      shipping_address: body.shipping_address ?? null,
       role: 'user',
     })
     if (error) {

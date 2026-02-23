@@ -6,6 +6,9 @@ export interface Profile {
   full_name: string | null
   avatar_url: string | null
   phone: string | null
+  shipping_city?: string | null
+  shipping_district?: string | null
+  shipping_address?: string | null
   role: Role
   created_at: string
   updated_at: string

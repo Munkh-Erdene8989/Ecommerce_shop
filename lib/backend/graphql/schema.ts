@@ -320,7 +320,7 @@ export const typeDefs = `#graphql
   }
 
   type Mutation {
-    upsertProfileIfMissing(id: ID, email: String, full_name: String, avatar_url: String): Profile!
+    upsertProfileIfMissing(id: ID, email: String, full_name: String, avatar_url: String, phone: String): Profile!
     createOrUpdateProduct(input: CreateProductInput!): Product!
     updateProduct(input: UpdateProductInput!): Product!
     deleteProduct(id: ID!): Boolean!

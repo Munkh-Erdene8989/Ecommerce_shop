@@ -303,7 +303,11 @@ export const resolvers = {
   },
 
   Mutation: {
-    async upsertProfileIfMissing(_: unknown, args: { id?: string; email?: string; full_name?: string; avatar_url?: string }, ctx: GraphQLContext) {
+    async upsertProfileIfMissing(
+      _: unknown,
+      args: { id?: string; email?: string; full_name?: string; avatar_url?: string; phone?: string },
+      ctx: GraphQLContext
+    ) {
       const auth = await requireAuth(ctx.authHeader)
       const db = supabase(ctx)
       const id = args.id ?? auth.userId
@@ -313,6 +317,7 @@ export const resolvers = {
         email: args.email ?? existing?.email ?? '',
         full_name: args.full_name ?? existing?.full_name ?? null,
         avatar_url: args.avatar_url ?? existing?.avatar_url ?? null,
+        phone: args.phone ?? existing?.phone ?? null,
         updated_at: new Date().toISOString(),
       }
       if (existing) {

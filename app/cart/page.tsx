@@ -3,7 +3,7 @@
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
 import Link from 'next/link'
-import Image from 'next/image'
+import ProductImage from '@/components/ProductImage'
 import { useCart } from '@/contexts/CartContext'
 import { formatPrice } from '@/lib/utils'
 
@@ -31,7 +31,7 @@ export default function CartPage() {
               {cart.map((item) => (
                 <div key={item.id} className="card p-4 flex flex-col sm:flex-row gap-4 items-center">
                   <Link href={item.slug ? `/products/${item.slug}` : '#'} className="shrink-0 rounded-lg overflow-hidden w-20 h-20">
-                    <Image src={item.image} alt={item.name} width={80} height={80} className="w-full h-full object-cover" />
+                    <ProductImage src={item.image} alt={item.name} width={80} height={80} className="w-full h-full object-cover" />
                   </Link>
                   <div className="flex-1 min-w-0 text-center sm:text-left">
                     <Link

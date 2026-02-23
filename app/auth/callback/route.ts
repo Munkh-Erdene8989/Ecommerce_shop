@@ -5,7 +5,7 @@ import { createAdminClient } from '@/lib/backend/supabase/adminClient'
 
 async function upsertProfile(
   token: string,
-  data: { id: string; email?: string; full_name?: string; avatar_url?: string }
+  data: { id: string; email?: string; full_name?: string; avatar_url?: string; phone?: string }
 ) {
   const auth = await requireAuth(`Bearer ${token}`)
   const supabase = createAdminClient()
@@ -19,6 +19,7 @@ async function upsertProfile(
         email: data.email ?? undefined,
         full_name: data.full_name ?? undefined,
         avatar_url: data.avatar_url ?? undefined,
+        phone: data.phone ?? undefined,
         updated_at: new Date().toISOString(),
       })
       .eq('id', id)
@@ -28,6 +29,7 @@ async function upsertProfile(
       email: data.email ?? '',
       full_name: data.full_name ?? null,
       avatar_url: data.avatar_url ?? null,
+      phone: data.phone ?? null,
       role: 'user',
     })
   }
@@ -55,6 +57,7 @@ export async function GET(request: Request) {
       email: session.user.email,
       full_name: session.user.user_metadata?.full_name ?? session.user.user_metadata?.name,
       avatar_url: session.user.user_metadata?.avatar_url ?? session.user.user_metadata?.picture,
+      phone: session.user.user_metadata?.phone,
     })
   } catch (e) {
     console.warn('upsert-profile failed', e)
