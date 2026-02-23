@@ -22,6 +22,7 @@ import {
 } from '@/components/ui/dialog'
 import { Skeleton } from '@/components/ui/skeleton'
 import { ADMIN_PRODUCTS } from '@/lib/admin/graphql'
+import { ProductImageUploader } from '@/components/admin/ProductImageUploader'
 
 const productSchema = z.object({
   name: z.string().min(1, 'Нэр заавал'),
@@ -103,6 +104,8 @@ export default function EditProductPage() {
     handleSubmit,
     reset,
     formState: { errors },
+    setValue,
+    watch,
   } = useForm<ProductFormData>({
     resolver: zodResolver(productSchema),
     values: product
@@ -123,6 +126,8 @@ export default function EditProductPage() {
         }
       : undefined,
   })
+
+  const imageUrl = watch('image')
 
   const onSubmit = async (data: ProductFormData) => {
     try {
@@ -224,10 +229,16 @@ export default function EditProductPage() {
               <Label htmlFor="stock_quantity">Нөөц</Label>
               <Input id="stock_quantity" type="number" {...register('stock_quantity')} className="mt-1" />
             </div>
-            <div>
-              <Label htmlFor="image">Зургийн URL</Label>
-              <Input id="image" {...register('image')} className="mt-1" />
-            </div>
+        <div>
+          <Label htmlFor="image">Зургийн URL</Label>
+          <Input id="image" {...register('image')} className="mt-1" />
+          <div className="mt-3">
+            <ProductImageUploader
+              value={imageUrl}
+              onChange={(url) => setValue('image', url, { shouldDirty: true })}
+            />
+          </div>
+        </div>
             <div>
               <Label htmlFor="description">Тайлбар</Label>
               <textarea id="description" {...register('description')} rows={3} className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />

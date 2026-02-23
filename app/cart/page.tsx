@@ -10,7 +10,7 @@ import { formatPrice } from '@/lib/utils'
 export default function CartPage() {
   const { cart, removeFromCart, updateQuantity, getTotal } = useCart()
   const total = getTotal()
-  const shipping = total >= 60000 ? 0 : 5000
+  const shipping = total >= 60000 ? 0 : 50
   const grandTotal = total + shipping
 
   return (

@@ -20,7 +20,7 @@ export default function CheckoutPage() {
   const [form, setForm] = useState({ name: '', email: '', phone: '', city: 'Улаанбаатар', district: '', address: '' })
 
   const subtotal = getTotal()
-  const shipping = subtotal >= 60000 ? 0 : 5000
+  const shipping = subtotal >= 60000 ? 0 : 50
   const total = subtotal + shipping
 
   useEffect(() => {
@@ -82,8 +82,14 @@ export default function CheckoutPage() {
       })
       const payData = await payRes.json()
       if (!payRes.ok) throw new Error(payData.error ?? 'QPay create failed')
+
+      const rawQr: string = payData.qr_image ?? ''
+      const isDataUrl = /^data:/i.test(rawQr)
+      const looksLikeUrl = /^https?:\/\//i.test(rawQr) || rawQr.startsWith('/')
+      const qrImage = rawQr && !isDataUrl && !looksLikeUrl ? `data:image/png;base64,${rawQr}` : rawQr
+
       setQpay({
-        qr_image: payData.qr_image ?? '',
+        qr_image: qrImage,
         urls: payData.urls ?? [],
         orderId,
       })

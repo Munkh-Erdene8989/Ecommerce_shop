@@ -7,6 +7,29 @@
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
 -- =============================================
+-- Storage buckets
+-- =============================================
+-- Бүтээгдэхүүний зургуудын bucket (frontend-ээс upload хийгдэнэ)
+INSERT INTO storage.buckets (id, name, public)
+VALUES ('product-images', 'product-images', true)
+ON CONFLICT (id) DO NOTHING;
+
+-- Storage RLS: product-images bucket
+ALTER TABLE storage.objects ENABLE ROW LEVEL SECURITY;
+
+-- Бүх хэрэглэгчид product-images bucket-ээс унших эрхтэй
+DROP POLICY IF EXISTS "Product images: public read" ON storage.objects;
+CREATE POLICY "Product images: public read"
+  ON storage.objects FOR SELECT
+  USING (bucket_id = 'product-images');
+
+-- Нэвтэрсэн хэрэглэгч бүр product-images bucket руу upload хийж болно
+DROP POLICY IF EXISTS "Product images: authenticated upload" ON storage.objects;
+CREATE POLICY "Product images: authenticated upload"
+  ON storage.objects FOR INSERT
+  WITH CHECK (bucket_id = 'product-images' AND auth.uid() IS NOT NULL);
+
+-- =============================================
 -- 1. Profiles table (extends auth.users)
 -- =============================================
 CREATE TABLE IF NOT EXISTS public.profiles (

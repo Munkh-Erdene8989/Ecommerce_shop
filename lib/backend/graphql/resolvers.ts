@@ -274,7 +274,7 @@ export const resolvers = {
       return {
         store_name: v.store_name ?? 'AZ Beauty',
         logo_url: v.logo_url ?? '',
-        shipping_rate: v.shipping_rate ?? 5000,
+        shipping_rate: v.shipping_rate ?? 50,
         free_shipping_threshold: v.free_shipping_threshold ?? 60000,
         tax_rate: v.tax_rate ?? 0,
       }

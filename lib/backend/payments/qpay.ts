@@ -107,6 +107,16 @@ export async function checkInvoice(invoiceId: string): Promise<CheckInvoiceResul
 }
 
 export function getCallbackUrl(orderId: string): string {
-  const base = QPAY_CALLBACK_URL || APP_URL || 'http://localhost:3000'
-  return `${base}/api/payments/qpay/webhook?order_id=${orderId}`
+  // QPAY_CALLBACK_URL can be either:
+  // - full webhook URL (recommended): https://your-domain/api/payments/qpay/webhook
+  // - or just the app base URL: https://your-domain
+  //
+  // We normalize both cases and always append ?order_id=<id>.
+  const rawBase = QPAY_CALLBACK_URL || APP_URL || 'http://localhost:3000'
+  const hasWebhookPath = rawBase.includes('/api/payments/qpay/webhook')
+  const baseUrl = hasWebhookPath ? rawBase : `${rawBase.replace(/\/$/, '')}/api/payments/qpay/webhook`
+
+  const url = new URL(baseUrl)
+  url.searchParams.set('order_id', orderId)
+  return url.toString()
 }
