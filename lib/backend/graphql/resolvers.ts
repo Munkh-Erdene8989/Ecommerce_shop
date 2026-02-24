@@ -270,12 +270,20 @@ export const resolvers = {
       const db = supabase(ctx)
       const { data, error } = await db.from('store_settings').select('value').eq('key', 'general').single()
       if (error || !data?.value) {
-        return { store_name: 'AZ Beauty', logo_url: '', shipping_rate: 5000, free_shipping_threshold: 60000, tax_rate: 0 }
+        return {
+          store_name: 'AZ Beauty',
+          logo_url: '',
+          hero_image_url: '',
+          shipping_rate: 5000,
+          free_shipping_threshold: 60000,
+          tax_rate: 0,
+        }
       }
       const v = data.value as Record<string, unknown>
       return {
         store_name: v.store_name ?? 'AZ Beauty',
         logo_url: v.logo_url ?? '',
+        hero_image_url: v.hero_image_url ?? '',
         shipping_rate: v.shipping_rate ?? 5000,
         free_shipping_threshold: v.free_shipping_threshold ?? 60000,
         tax_rate: v.tax_rate ?? 0,
@@ -533,6 +541,7 @@ export const resolvers = {
       const value = {
         store_name: input.store_name ?? undefined,
         logo_url: input.logo_url ?? undefined,
+        hero_image_url: input.hero_image_url ?? undefined,
         shipping_rate: input.shipping_rate ?? undefined,
         free_shipping_threshold: input.free_shipping_threshold ?? undefined,
         tax_rate: input.tax_rate ?? undefined,
@@ -542,7 +551,15 @@ export const resolvers = {
       const merged = { ...(existing?.value as Record<string, unknown> ?? {}), ...value }
       const { error } = await db.from('store_settings').upsert({ key: 'general', value: merged, updated_at: new Date().toISOString() }, { onConflict: 'key' })
       if (error) throw new Error(error.message)
-      return { ...merged, store_name: merged.store_name ?? 'AZ Beauty', logo_url: merged.logo_url ?? '', shipping_rate: merged.shipping_rate ?? 5000, free_shipping_threshold: merged.free_shipping_threshold ?? 60000, tax_rate: merged.tax_rate ?? 0 }
+      return {
+        ...merged,
+        store_name: merged.store_name ?? 'AZ Beauty',
+        logo_url: merged.logo_url ?? '',
+        hero_image_url: merged.hero_image_url ?? '',
+        shipping_rate: merged.shipping_rate ?? 5000,
+        free_shipping_threshold: merged.free_shipping_threshold ?? 60000,
+        tax_rate: merged.tax_rate ?? 0,
+      }
     },
   },
 

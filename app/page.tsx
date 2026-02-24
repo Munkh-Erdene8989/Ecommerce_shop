@@ -1,79 +1,108 @@
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
 import Link from 'next/link'
-import ProductImage from '@/components/ProductImage'
 import { createClient } from '@/lib/supabase/server'
 import { formatPrice } from '@/lib/utils'
+import { FeaturedProductsTabs } from '../components/FeaturedProductsTabs'
 
 export default async function Home() {
   const supabase = await createClient()
+  const { data: storeSettingsRows } = await supabase
+    .from('store_settings')
+    .select('value')
+    .eq('key', 'general')
+  const storeSettingsValue = (storeSettingsRows?.[0]?.value as { hero_image_url?: string } | undefined) ?? {}
+  const heroImageUrl = typeof storeSettingsValue.hero_image_url === 'string' ? storeSettingsValue.hero_image_url : ''
+
   const { data: products } = await supabase
     .from('products')
-    .select('id, name, slug, price, original_price, image, is_featured')
+    .select('id, name, slug, price, original_price, image, is_featured, category')
     .eq('is_featured', true)
     .limit(8)
 
   return (
     <main className="min-h-screen flex flex-col">
       <Header />
-      {/* Hero — Exciner-style minimal */}
-      <section className="border-b border-stone-200/60 bg-white">
-        <div className="container py-16 md:py-24 text-center">
-          <h1 className="text-3xl md:text-5xl font-semibold tracking-tight text-stone-900 mb-4">
-            AZ Beauty
-          </h1>
-          <p className="text-stone-500 text-lg max-w-md mx-auto mb-8">
-            Солонгос гоо сайхны шилдэг бүтээгдэхүүн
-          </p>
-          <Link href="/products" className="btn-primary inline-flex">
-            Бүтээгдэхүүн үзэх
-          </Link>
+      {/* Hero — K-Beauty style */}
+      <section className="border-b border-stone-200/60 bg-gradient-to-br from-pink-50 via-white to-purple-50">
+        <div className="container py-16 md:py-24">
+          <div className="grid items-center gap-10 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)]">
+            <div className="space-y-6">
+              <span className="inline-flex items-center rounded-full bg-white/70 px-4 py-1 text-xs font-medium text-pink-600 shadow-sm ring-1 ring-pink-100 backdrop-blur">
+                ✨ New Collection 2026
+              </span>
+              <h1 className="text-3xl md:text-5xl lg:text-6xl font-semibold tracking-tight text-stone-900 leading-tight">
+              Гэрэлтсэн төгс арьсны нууцыг нээ{' '}
+                <span className="bg-gradient-to-r from-pink-500 to-fuchsia-500 bg-clip-text text-transparent">
+                арьсны нууцыг нээ
+                </span>
+              </h1>
+              <p className="text-base md:text-lg max-w-xl text-stone-500">
+                Гоо сайхны бүтээгдэхүүнүүд. Арьсыг тань гэрэлтсэн, эрүүл харагдуулах
+                найрлагатай, өндөр чанарын шүтэлтүүд.
+              </p>
+              <div className="flex flex-wrap items-center gap-4">
+                <Link
+                  href="/products"
+                  className="btn-primary inline-flex items-center justify-center px-6 py-3 text-sm md:text-base"
+                >
+                  Shop Now
+                </Link>
+                <Link
+                  href="#featured"
+                  className="inline-flex items-center justify-center rounded-full border border-stone-200 bg-white/70 px-6 py-3 text-sm md:text-base font-medium text-stone-800 shadow-sm hover:border-stone-300 hover:bg-white"
+                >
+                  Learn More
+                </Link>
+              </div>
+              <div className="mt-6 flex flex-wrap gap-8 text-sm md:text-base">
+                <div>
+                  <p className="text-2xl md:text-3xl font-semibold text-pink-500">500+</p>
+                  <p className="text-stone-500">Products</p>
+                </div>
+                <div>
+                  <p className="text-2xl md:text-3xl font-semibold text-pink-500">50K+</p>
+                  <p className="text-stone-500">Happy Customers</p>
+                </div>
+                <div>
+                  <p className="text-2xl md:text-3xl font-semibold text-pink-500">4.9★</p>
+                  <p className="text-stone-500">Average Rating</p>
+                </div>
+              </div>
+            </div>
+            <div className="relative">
+              <div className="relative mx-auto aspect-[4/5] w-full max-w-sm overflow-hidden rounded-[32px] bg-gradient-to-br from-stone-100 via-stone-50 to-pink-100 shadow-xl">
+                {heroImageUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={heroImageUrl} alt="Hero" className="h-full w-full object-cover" />
+                ) : (
+                  <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(255,255,255,0.9),_transparent_60%),radial-gradient(circle_at_bottom,_rgba(248,181,212,0.7),_transparent_55%)]" />
+                )}
+              </div>
+              <div className="absolute -bottom-6 left-4 right-4">
+                <div className="flex items-center gap-3 rounded-2xl bg-white/90 px-4 py-3 shadow-lg backdrop-blur">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-pink-50 text-xs font-semibold text-pink-500">
+                    AZ
+                  </div>
+                  <div className="text-sm">
+                    <p className="font-medium text-stone-900">Free Shipping</p>
+                    <p className="text-xs text-stone-500">100,000₮-өөс дээш захиалгад</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </section>
       {/* Featured products */}
-      <section className="container py-12 md:py-16">
+      <section id="featured" className="container py-12 md:py-16">
         <h2 className="text-sm font-medium uppercase tracking-widest text-stone-400 mb-2">
           Онцлон санал болгох
         </h2>
-        <p className="text-2xl md:text-3xl font-semibold text-stone-900 mb-8">
+        <p className="text-2xl md:text-3xl font-semibold text-stone-900 mb-4 md:mb-6">
           Шилдэг бүтээгдэхүүн
         </p>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-8">
-          {(products ?? []).map((p) => (
-            <Link
-              key={p.id}
-              href={`/products/${p.slug}`}
-              className="card overflow-hidden group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
-            >
-              <div className="relative aspect-square overflow-hidden bg-stone-50">
-                <ProductImage
-                  src={p.image}
-                  alt={p.name}
-                  width={400}
-                  height={400}
-                  className="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-500"
-                />
-                {p.original_price != null && p.original_price > p.price && (
-                  <span
-                    className="absolute top-3 left-3 rounded-full bg-primary text-white text-xs font-medium px-2.5 py-1"
-                    style={{ backgroundColor: 'var(--primary)' }}
-                  >
-                    −{Math.round((1 - p.price / p.original_price) * 100)}%
-                  </span>
-                )}
-              </div>
-              <div className="p-5 space-y-1">
-                <p className="font-medium line-clamp-2 text-stone-900 text-sm md:text-base">{p.name}</p>
-                <p className="font-semibold text-stone-900" style={{ color: 'var(--primary)' }}>
-                  {formatPrice(p.price)}
-                </p>
-                {p.original_price != null && p.original_price > p.price && (
-                  <p className="text-sm text-stone-400 line-through">{formatPrice(p.original_price)}</p>
-                )}
-              </div>
-            </Link>
-          ))}
-        </div>
+        <FeaturedProductsTabs products={products ?? []} />
       </section>
       <Footer />
     </main>

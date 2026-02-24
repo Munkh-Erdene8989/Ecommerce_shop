@@ -163,6 +163,7 @@ export const typeDefs = `#graphql
   type StoreSettings {
     store_name: String
     logo_url: String
+    hero_image_url: String
     shipping_rate: Int
     free_shipping_threshold: Int
     tax_rate: Float
@@ -304,6 +305,7 @@ export const typeDefs = `#graphql
   input StoreSettingsInput {
     store_name: String
     logo_url: String
+    hero_image_url: String
     shipping_rate: Int
     free_shipping_threshold: Int
     tax_rate: Float

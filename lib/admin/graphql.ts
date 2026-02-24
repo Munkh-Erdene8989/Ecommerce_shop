@@ -128,6 +128,7 @@ export const STORE_SETTINGS = gql`
     storeSettings {
       store_name
       logo_url
+      hero_image_url
       shipping_rate
       free_shipping_threshold
       tax_rate
@@ -140,6 +141,7 @@ export const UPDATE_STORE_SETTINGS = gql`
     updateStoreSettings(input: $input) {
       store_name
       logo_url
+      hero_image_url
       shipping_rate
       free_shipping_threshold
       tax_rate
