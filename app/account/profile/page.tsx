@@ -34,7 +34,8 @@ export default function AccountProfilePage() {
   const [saving, setSaving] = useState(false)
 
   useEffect(() => {
-    if (!session?.access_token) {
+    const accessToken = session?.access_token
+    if (!accessToken) {
       router.push('/login?next=/account/profile')
       return
     }
@@ -43,14 +44,14 @@ export default function AccountProfilePage() {
       try {
         const [profileRes, lastOrderRes] = await Promise.all([
           fetch('/api/auth/me', {
-            headers: { Authorization: `Bearer ${session.access_token}` },
+            headers: { Authorization: `Bearer ${accessToken}` },
             signal: controller.signal,
           }),
           fetch('/api/graphql', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
-              Authorization: `Bearer ${session.access_token}`,
+              Authorization: `Bearer ${accessToken}`,
             },
             body: JSON.stringify({
               query: `query MyOrdersForProfile($paging: PagingInput) {

@@ -7,10 +7,11 @@ const plusJakarta = Plus_Jakarta_Sans({ subsets: ['latin'], display: 'swap' })
 import { AuthProvider } from '@/lib/providers/AuthProvider'
 import { ApolloProvider } from '@/lib/providers/ApolloProvider'
 import { Toaster } from 'react-hot-toast'
+import { SpeedInsights } from "@vercel/speed-insights/next"
 
 export const metadata: Metadata = {
-  title: 'AZ Beauty - Солонгос Гоо Сайхны Бүтээгдэхүүн',
-  description: 'Солонгос гоо сайхны шилдэг бүтээгдэхүүн',
+  title: 'K Beauty - Солонгос Гоо Сайхны Бүтээгдэхүүн',
+  description: 'Гоо сайхны шилдэг бүтээгдэхүүн',
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
