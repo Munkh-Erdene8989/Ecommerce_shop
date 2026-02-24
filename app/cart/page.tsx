@@ -1,17 +1,43 @@
 'use client'
 
+import { useEffect, useState } from 'react'
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
 import Link from 'next/link'
 import ProductImage from '@/components/ProductImage'
 import { useCart } from '@/contexts/CartContext'
 import { formatPrice } from '@/lib/utils'
+import { DEFAULT_SHIPPING_COST, FREE_SHIPPING_THRESHOLD } from '@/lib/shared'
 
 export default function CartPage() {
   const { cart, removeFromCart, updateQuantity, getTotal } = useCart()
-  const total = getTotal()
-  const shipping = total >= 60000 ? 0 : 50
-  const grandTotal = total + shipping
+  const subtotal = getTotal()
+  const [shippingRate, setShippingRate] = useState<number>(DEFAULT_SHIPPING_COST)
+  const [freeShippingThreshold, setFreeShippingThreshold] = useState<number>(FREE_SHIPPING_THRESHOLD)
+
+  const shipping = subtotal >= freeShippingThreshold ? 0 : shippingRate
+  const grandTotal = subtotal + shipping
+
+  useEffect(() => {
+    // Дэлгүүрийн тохиргооноос хүргэлтийн үнэ, үнэгүй хүргэлтийн босгыг унших
+    fetch('/api/graphql', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        query: `query StoreSettings { storeSettings { shipping_rate free_shipping_threshold } }`,
+      }),
+    })
+      .then((r) => r.json())
+      .then((res) => {
+        const s = res?.data?.storeSettings
+        if (!s) return
+        if (typeof s.shipping_rate === 'number') setShippingRate(s.shipping_rate)
+        if (typeof s.free_shipping_threshold === 'number') setFreeShippingThreshold(s.free_shipping_threshold)
+      })
+      .catch(() => {
+        // алдаа гарвал default утгыг ашиглана
+      })
+  }, [])
 
   return (
     <main className="min-h-screen flex flex-col">
@@ -76,8 +102,8 @@ export default function CartPage() {
                 <h3 className="font-semibold text-stone-900 mb-4">Захиалгын дүн</h3>
                 <div className="space-y-2 text-stone-600">
                   <p className="flex justify-between">
-                    <span>Дэд дүн</span>
-                    <span>{formatPrice(total)}</span>
+                    <span>бүтээгдэхүүн</span>
+                    <span>{formatPrice(subtotal)}</span>
                   </p>
                   <p className="flex justify-between">
                     <span>Хүргэлт</span>

@@ -2,7 +2,8 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { useQuery } from '@apollo/client'
+import { useMutation, useQuery } from '@apollo/client'
+import toast from 'react-hot-toast'
 import {
   useReactTable,
   getCoreRowModel,
@@ -10,7 +11,8 @@ import {
   type ColumnDef,
   type PaginationState,
 } from '@tanstack/react-table'
-import { ADMIN_ORDERS, ADMIN_ORDERS_TOTAL } from '@/lib/admin/graphql'
+import { ADMIN_ORDERS, ADMIN_ORDERS_TOTAL, UPDATE_ORDER_STATUS } from '@/lib/admin/graphql'
+import { ORDER_STATUSES } from '@/lib/shared'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import {
@@ -23,8 +25,45 @@ import {
 } from '@/components/ui/table'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Badge } from '@/components/ui/badge'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 
 const PAGE_SIZE = 10
+
+function StatusSelectCell({ orderId, initialStatus }: { orderId: string; initialStatus: string }) {
+  const [value, setValue] = useState(initialStatus)
+  const [updateStatus, { loading }] = useMutation(UPDATE_ORDER_STATUS)
+
+  const handleChange = async (newStatus: string) => {
+    const prev = value
+    setValue(newStatus)
+    try {
+      await updateStatus({
+        variables: {
+          input: { order_id: orderId, status: newStatus },
+        },
+      })
+      toast.success('Хүргэлтийн статус шинэчлэгдлээ')
+    } catch (e) {
+      setValue(prev)
+      toast.error(e instanceof Error ? e.message : 'Алдаа гарлаа')
+    }
+  }
+
+  return (
+    <Select value={value} onValueChange={handleChange} disabled={loading}>
+      <SelectTrigger className="h-8 w-[140px]">
+        <SelectValue />
+      </SelectTrigger>
+      <SelectContent>
+        {ORDER_STATUSES.map((s) => (
+          <SelectItem key={s} value={s}>
+            {s}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
+  )
+}
 
 export default function AdminOrdersPage() {
   const [pagination, setPagination] = useState<PaginationState>({ pageIndex: 0, pageSize: PAGE_SIZE })
@@ -70,8 +109,13 @@ export default function AdminOrdersPage() {
     },
     {
       accessorKey: 'status',
-      header: 'Төлөв',
-      cell: ({ getValue }) => <Badge variant="secondary">{String(getValue())}</Badge>,
+      header: 'Хүргэлтийн төлөв',
+      cell: ({ row }) => (
+        <div className="flex items-center gap-2">
+          <Badge variant="secondary">{String(row.original.status)}</Badge>
+          <StatusSelectCell orderId={row.original.id} initialStatus={row.original.status} />
+        </div>
+      ),
     },
     {
       accessorKey: 'payment_status',

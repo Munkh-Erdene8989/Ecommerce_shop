@@ -9,6 +9,7 @@ import { useCart } from '@/contexts/CartContext'
 import { useAuth } from '@/lib/providers/AuthProvider'
 import { formatPrice } from '@/lib/utils'
 import { useRouter } from 'next/navigation'
+import { DEFAULT_SHIPPING_COST, FREE_SHIPPING_THRESHOLD } from '@/lib/shared'
 
 export default function CheckoutPage() {
   const { cart, getTotal, clearCart } = useCart()
@@ -18,9 +19,11 @@ export default function CheckoutPage() {
   const [qpay, setQpay] = useState<{ qr_image: string; urls: { name: string; link: string }[]; orderId: string } | null>(null)
   const [checking, setChecking] = useState(false)
   const [form, setForm] = useState({ name: '', email: '', phone: '', city: 'Улаанбаатар', district: '', address: '' })
+  const [shippingRate, setShippingRate] = useState<number>(DEFAULT_SHIPPING_COST)
+  const [freeShippingThreshold, setFreeShippingThreshold] = useState<number>(FREE_SHIPPING_THRESHOLD)
 
   const subtotal = getTotal()
-  const shipping = subtotal >= 60000 ? 0 : 50
+  const shipping = subtotal >= freeShippingThreshold ? 0 : shippingRate
   const total = subtotal + shipping
 
   useEffect(() => {
@@ -31,6 +34,27 @@ export default function CheckoutPage() {
       name: (user?.user_metadata?.full_name ?? user?.user_metadata?.name ?? '') || f.name,
     }))
   }, [user, session])
+
+  useEffect(() => {
+    // Дэлгүүрийн тохиргооноос хүргэлтийн үнэ, үнэгүй хүргэлтийн босгыг унших
+    fetch('/api/graphql', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        query: `query StoreSettings { storeSettings { shipping_rate free_shipping_threshold } }`,
+      }),
+    })
+      .then((r) => r.json())
+      .then((res) => {
+        const s = res?.data?.storeSettings
+        if (!s) return
+        if (typeof s.shipping_rate === 'number') setShippingRate(s.shipping_rate)
+        if (typeof s.free_shipping_threshold === 'number') setFreeShippingThreshold(s.free_shipping_threshold)
+      })
+      .catch(() => {
+        // алдаа гарсан тохиолдолд default утгыг үргэлжлүүлэн ашиглана
+      })
+  }, [])
 
   useEffect(() => {
     if (cart.length === 0 && !qpay) router.push('/cart')

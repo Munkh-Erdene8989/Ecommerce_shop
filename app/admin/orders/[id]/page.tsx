@@ -73,7 +73,7 @@ export default function AdminOrderDetailPage() {
         <CardContent className="space-y-4">
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
-              <Label>Захиалгын төлөв</Label>
+              <Label>Хүргэлтийн төлөв</Label>
               <Select value={status} onValueChange={setStatus}>
                 <SelectTrigger className="mt-1">
                   <SelectValue />

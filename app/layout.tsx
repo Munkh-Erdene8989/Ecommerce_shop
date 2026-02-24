@@ -2,12 +2,12 @@ import type { Metadata } from 'next'
 import { Plus_Jakarta_Sans } from 'next/font/google'
 import './globals.css'
 import { CartProvider } from '@/contexts/CartContext'
-
-const plusJakarta = Plus_Jakarta_Sans({ subsets: ['latin'], display: 'swap' })
 import { AuthProvider } from '@/lib/providers/AuthProvider'
 import { ApolloProvider } from '@/lib/providers/ApolloProvider'
 import { Toaster } from 'react-hot-toast'
-import { SpeedInsights } from "@vercel/speed-insights/next"
+import { SpeedInsights } from '@vercel/speed-insights/next'
+
+const plusJakarta = Plus_Jakarta_Sans({ subsets: ['latin'], display: 'swap' })
 
 export const metadata: Metadata = {
   title: 'K Beauty - Солонгос Гоо Сайхны Бүтээгдэхүүн',
@@ -23,6 +23,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <CartProvider>
               {children}
               <Toaster position="top-center" toastOptions={{ duration: 3000 }} />
+              <SpeedInsights />
             </CartProvider>
           </ApolloProvider>
         </AuthProvider>

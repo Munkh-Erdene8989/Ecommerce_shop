@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useAuth } from '@/lib/providers/AuthProvider'
+import { useQuery } from '@apollo/client'
 import {
   LayoutDashboard,
   Package,
@@ -17,6 +18,7 @@ import {
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
+import { STORE_SETTINGS } from '@/lib/admin/graphql'
 
 const nav = [
   { href: '/admin', label: 'Overview', icon: LayoutDashboard },
@@ -33,13 +35,15 @@ const nav = [
 export function AdminShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
   const { user, signOut } = useAuth()
+  const { data } = useQuery(STORE_SETTINGS)
+  const storeName: string = data?.storeSettings?.store_name ?? 'K Beauty'
 
   return (
     <div className="flex min-h-screen bg-gray-100">
       <aside className="fixed left-0 top-0 z-40 h-screen w-56 border-r border-gray-200 bg-white">
         <div className="flex h-14 items-center gap-2 border-b border-gray-200 px-4">
           <Link href="/admin" className="font-semibold text-primary">
-            AZ Admin
+            {storeName} Dashbaord
           </Link>
         </div>
         <nav className="flex flex-col gap-0.5 p-2">
