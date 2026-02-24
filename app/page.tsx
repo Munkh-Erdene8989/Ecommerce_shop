@@ -1,6 +1,7 @@
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
 import Link from 'next/link'
+import Image from 'next/image'
 import { createClient } from '@/lib/supabase/server'
 import { formatPrice } from '@/lib/utils'
 import { FeaturedProductsTabs } from '../components/FeaturedProductsTabs'
@@ -73,8 +74,14 @@ export default async function Home() {
             <div className="relative">
               <div className="relative mx-auto aspect-[4/5] w-full max-w-sm overflow-hidden rounded-[32px] bg-gradient-to-br from-stone-100 via-stone-50 to-pink-100 shadow-xl">
                 {heroImageUrl ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={heroImageUrl} alt="Hero" className="h-full w-full object-cover" />
+                  <Image
+                    src={heroImageUrl}
+                    alt="Hero"
+                    fill
+                    priority
+                    sizes="(min-width: 1024px) 420px, 70vw"
+                    className="h-full w-full object-cover"
+                  />
                 ) : (
                   <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(255,255,255,0.9),_transparent_60%),radial-gradient(circle_at_bottom,_rgba(248,181,212,0.7),_transparent_55%)]" />
                 )}

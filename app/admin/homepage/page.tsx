@@ -1,6 +1,7 @@
 'use client'
 
 import * as React from 'react'
+import Image from 'next/image'
 import { useQuery, useMutation } from '@apollo/client'
 import toast from 'react-hot-toast'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
@@ -73,10 +74,11 @@ export default function AdminHomepageHeroPage() {
                 <div className="overflow-hidden rounded-3xl border border-gray-200 bg-gradient-to-br from-pink-50 via-white to-purple-50">
                   {heroImageUrl ? (
                     <div className="relative aspect-[4/5] w-full max-w-md">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
+                      <Image
                         src={heroImageUrl}
                         alt="Homepage hero"
+                        fill
+                        sizes="(min-width: 1024px) 420px, 70vw"
                         className="h-full w-full object-cover"
                       />
                     </div>

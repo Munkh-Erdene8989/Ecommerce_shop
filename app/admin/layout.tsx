@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { AdminShell } from '@/components/admin/AdminShell'
+import { ApolloProvider } from '@/lib/providers/ApolloProvider'
 
 export const metadata: Metadata = {
   title: 'Admin - AZ Beauty',
@@ -13,5 +14,9 @@ export default function AdminLayout({
 }: {
   children: React.ReactNode
 }) {
-  return <AdminShell>{children}</AdminShell>
+  return (
+    <ApolloProvider>
+      <AdminShell>{children}</AdminShell>
+    </ApolloProvider>
+  )
 }

@@ -60,13 +60,15 @@ export function FeaturedProductsTabs({ products }: { products: FeaturedProduct[]
             className="card overflow-hidden group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
           >
             <div className="relative aspect-square overflow-hidden bg-stone-50">
-              <ProductImage
-                src={p.image}
-                alt={p.name}
-                width={400}
-                height={400}
-                className="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-500"
-              />
+              {p.image ? (
+                <ProductImage
+                  src={p.image}
+                  alt={p.name}
+                  width={400}
+                  height={400}
+                  className="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-500"
+                />
+              ) : null}
               {p.original_price != null && p.original_price > p.price && (
                 <span
                   className="absolute top-3 left-3 rounded-full bg-primary text-white text-xs font-medium px-2.5 py-1"
