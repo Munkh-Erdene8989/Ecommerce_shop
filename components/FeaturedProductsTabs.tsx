@@ -66,6 +66,7 @@ export function FeaturedProductsTabs({ products }: { products: FeaturedProduct[]
                   alt={p.name}
                   width={400}
                   height={400}
+                  sizes="(max-width: 768px) 50vw, 25vw"
                   className="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-500"
                 />
               ) : null}

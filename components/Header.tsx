@@ -2,12 +2,14 @@
 
 import Link from 'next/link'
 import { useCart } from '@/contexts/CartContext'
+import { useStoreSettings } from '@/contexts/StoreSettingsContext'
 import { useAuth } from '@/lib/providers/AuthProvider'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 
 export default function Header() {
   const { getItemCount } = useCart()
+  const { storeName } = useStoreSettings()
   const { user, session, loading, signOut } = useAuth()
   const router = useRouter()
   const [menuOpen, setMenuOpen] = useState(false)
@@ -32,7 +34,7 @@ export default function Header() {
           href="/"
           className="text-lg font-semibold tracking-tight text-stone-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 rounded-lg transition-opacity hover:opacity-80"
         >
-          AZ Beauty
+          {storeName}
         </Link>
         <nav className="flex items-center gap-0.5 md:gap-1">
           <Link href="/products" className={navLink}>
@@ -40,11 +42,13 @@ export default function Header() {
           </Link>
           <Link href="/cart" className={`${navLink} flex items-center gap-2`}>
             Сагс
-            {count > 0 && (
-              <span className="min-w-[1.25rem] h-5 px-1.5 flex items-center justify-center rounded-full bg-primary text-white text-xs font-medium">
-                {count}
-              </span>
-            )}
+            <span className="inline-flex min-w-[1.25rem] h-5 flex-shrink-0 items-center justify-center" aria-hidden>
+              {count > 0 ? (
+                <span className="rounded-full bg-primary px-1.5 py-0.5 text-xs font-medium text-white" style={{ backgroundColor: 'var(--primary)' }}>
+                  {count}
+                </span>
+              ) : null}
+            </span>
           </Link>
           {!loading && user && (
             <div className="relative ml-1">

@@ -1,9 +1,13 @@
+'use client'
+
 import Link from 'next/link'
+import { useStoreSettings } from '@/contexts/StoreSettingsContext'
 
 const footerLink =
   'text-stone-400 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/30 focus-visible:ring-offset-2 focus-visible:ring-offset-stone-900 rounded transition-colors duration-200 text-sm'
 
 export default function Footer() {
+  const { storeName } = useStoreSettings()
   return (
     <footer className="bg-stone-900 text-stone-300 py-14 mt-auto">
       <div className="container grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-10">
@@ -12,7 +16,7 @@ export default function Footer() {
             href="/"
             className="text-lg font-semibold text-white hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/30 focus-visible:ring-offset-2 focus-visible:ring-offset-stone-900 rounded transition-opacity"
           >
-            AZ Beauty
+            {storeName}
           </Link>
           <p className="text-sm mt-3 text-stone-400 max-w-xs">
             Солонгос гоо сайхны шилдэг бүтээгдэхүүн
@@ -36,7 +40,7 @@ export default function Footer() {
         </div>
       </div>
       <div className="container mt-12 pt-8 border-t border-stone-800">
-        <p className="text-sm text-stone-500">© {new Date().getFullYear()} AZ Beauty. Бүх эрх хуулиар хамгаалагдсан.</p>
+        <p className="text-sm text-stone-500">© {new Date().getFullYear()} {storeName}. Бүх эрх хуулиар хамгаалагдсан.</p>
       </div>
     </footer>
   )

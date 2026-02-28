@@ -6,6 +6,12 @@ import { createClient } from '@/lib/supabase/server'
 import { formatPrice } from '@/lib/utils'
 import { FeaturedProductsTabs } from '../components/FeaturedProductsTabs'
 
+// LCP болон cache: нүүр хуудсыг 60 сек кэшлэнэ
+export const revalidate = 60
+
+const HERO_BLUR =
+  'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAgGBgcGBQgHBwcJCQgKDBQNDAsLDBkSEw8UHRofHh0aHBwgJC4nICIsIxwcKDcpLDAxNDQ0Hyc5PTgyPC4zNDL/2wBDAQkJCQwLDBgNDRgyIRwhMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjL/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBEQACEQADAP'
+
 export default async function Home() {
   const supabase = await createClient()
   const { data: storeSettingsRows } = await supabase
@@ -79,6 +85,8 @@ export default async function Home() {
                     alt="Hero"
                     fill
                     priority
+                    placeholder="blur"
+                    blurDataURL={HERO_BLUR}
                     sizes="(min-width: 1024px) 420px, 70vw"
                     className="h-full w-full object-cover"
                   />

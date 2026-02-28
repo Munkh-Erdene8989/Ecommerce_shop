@@ -41,7 +41,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
   const { user, signOut } = useAuth()
   const { data } = useQuery(STORE_SETTINGS)
-  const storeName: string = data?.storeSettings?.store_name ?? 'K Beauty'
+  const storeName: string = data?.storeSettings?.store_name ?? 'AZ Beauty'
   const [mobileNavOpen, setMobileNavOpen] = useState(false)
 
   return (
@@ -50,7 +50,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
       <aside className="hidden md:fixed md:left-0 md:top-0 md:z-40 md:flex md:h-screen md:w-56 md:flex-col md:border-r md:border-gray-200 md:bg-white">
         <div className="flex h-14 items-center gap-2 border-b border-gray-200 px-4">
           <Link href="/admin" className="font-semibold text-primary">
-            {storeName} Dashbaord
+            {storeName} Dashboard
           </Link>
         </div>
         <nav className="flex flex-1 flex-col gap-0.5 overflow-y-auto p-2">
