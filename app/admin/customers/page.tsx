@@ -71,19 +71,20 @@ export default function AdminCustomersPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold">Хэрэглэгчид</h1>
+      <h1 className="text-xl font-bold sm:text-2xl">Хэрэглэгчид</h1>
       <Card>
         <CardHeader>
-          <CardTitle>Жагсаалт</CardTitle>
+          <CardTitle className="text-lg sm:text-base">Жагсаалт</CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="px-2 sm:px-6">
           {loading ? (
             <Skeleton className="h-64 w-full" />
           ) : customers.length === 0 ? (
             <div className="py-12 text-center text-gray-500">Хэрэглэгч олдсонгүй.</div>
           ) : (
             <>
-              <Table>
+              <div className="overflow-x-auto -mx-2 sm:mx-0">
+              <Table className="min-w-[600px]">
                 <TableHeader>
                   {table.getHeaderGroups().map((hg) => (
                     <TableRow key={hg.id}>
@@ -103,7 +104,8 @@ export default function AdminCustomersPage() {
                   ))}
                 </TableBody>
               </Table>
-              <div className="flex items-center justify-between border-t pt-4">
+              </div>
+              <div className="flex flex-col gap-3 border-t pt-4 sm:flex-row sm:items-center sm:justify-between">
                 <p className="text-sm text-gray-500">Нийт {total} хэрэглэгч</p>
                 <div className="flex gap-2">
                   <Button variant="outline" size="sm" onClick={() => table.previousPage()} disabled={!table.getCanPreviousPage()}>

@@ -56,17 +56,17 @@ export default function AdminSettingsPage() {
   if (loading && !s) return <Skeleton className="h-64 w-full" />
 
   return (
-    <div className="max-w-xl space-y-6">
-      <h1 className="text-2xl font-bold">Дэлгүүрийн тохиргоо</h1>
+    <div className="w-full max-w-xl space-y-6">
+      <h1 className="text-xl font-bold sm:text-2xl">Дэлгүүрийн тохиргоо</h1>
       <Card>
         <CardHeader>
           <CardTitle>Ерөнхий</CardTitle>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSave} className="space-y-4">
-            <div>
+            <div className="min-w-0">
               <Label>Дэлгүүрийн нэр</Label>
-              <Input value={storeName} onChange={(e) => setStoreName(e.target.value)} />
+              <Input value={storeName} onChange={(e) => setStoreName(e.target.value)} className="w-full" />
             </div>
             <div>
               <Label>Лого URL</Label>
@@ -84,7 +84,7 @@ export default function AdminSettingsPage() {
               <Label>Татварын хувь (0-100)</Label>
               <Input type="number" step="0.01" value={taxRate} onChange={(e) => setTaxRate(e.target.value)} />
             </div>
-            <Button type="submit" disabled={saving}>
+            <Button type="submit" disabled={saving} className="w-full sm:w-auto">
               {saving ? 'Хадгалж байна...' : 'Хадгалах'}
             </Button>
           </form>

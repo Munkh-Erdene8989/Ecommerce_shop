@@ -43,8 +43,8 @@ export default function AdminHomepageHeroPage() {
   }
 
   return (
-    <div className="max-w-3xl space-y-6">
-      <h1 className="text-2xl font-bold">Нүүр хуудас – Hero зураг</h1>
+    <div className="w-full max-w-3xl space-y-6">
+      <h1 className="text-xl font-bold sm:text-2xl">Нүүр хуудас – Hero зураг</h1>
       <p className="text-sm text-gray-600">
         Нүүр хуудасны дээр байрлах гол hero баннерын зургийг эндээс сонгож эсвэл солих боломжтой.
       </p>
@@ -71,9 +71,9 @@ export default function AdminHomepageHeroPage() {
               </div>
               <div className="space-y-2">
                 <Label>Preview</Label>
-                <div className="overflow-hidden rounded-3xl border border-gray-200 bg-gradient-to-br from-pink-50 via-white to-purple-50">
+                <div className="overflow-hidden rounded-2xl border border-gray-200 bg-gradient-to-br from-pink-50 via-white to-purple-50 sm:rounded-3xl">
                   {heroImageUrl ? (
-                    <div className="relative aspect-[4/5] w-full max-w-md">
+                    <div className="relative aspect-[4/5] w-full max-w-full sm:max-w-md">
                       <Image
                         src={heroImageUrl}
                         alt="Homepage hero"
@@ -83,13 +83,13 @@ export default function AdminHomepageHeroPage() {
                       />
                     </div>
                   ) : (
-                    <div className="flex aspect-[4/5] max-w-md items-center justify-center text-sm text-gray-400">
+                    <div className="flex aspect-[4/5] w-full max-w-full items-center justify-center text-sm text-gray-400 sm:max-w-md">
                       Одоогоор hero зураг сонгогдоогүй байна.
                     </div>
                   )}
                 </div>
               </div>
-              <Button type="submit" disabled={saving}>
+              <Button type="submit" disabled={saving} className="w-full sm:w-auto">
                 {saving ? 'Хадгалж байна...' : 'Хадгалах'}
               </Button>
             </form>

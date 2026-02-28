@@ -33,7 +33,7 @@ export default async function Home() {
                 ✨ New Collection 2026
               </span>
               <h1 className="text-3xl md:text-5xl lg:text-6xl font-semibold tracking-tight text-stone-900 leading-tight">
-              Гэрэлтсэн төгс арьсны нууцыг нээ{' '}
+              Гэрэлтсэн төгс {' '}
                 <span className="bg-gradient-to-r from-pink-500 to-fuchsia-500 bg-clip-text text-transparent">
                 арьсны нууцыг нээ
                 </span>

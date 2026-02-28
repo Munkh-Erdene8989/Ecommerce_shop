@@ -44,10 +44,10 @@ export default function AdminOverviewPage() {
   const stats = data?.dashboardStats
 
   return (
-    <div className="space-y-8">
-      <h1 className="text-2xl font-bold text-gray-900">Overview</h1>
+    <div className="space-y-6 sm:space-y-8">
+      <h1 className="text-xl font-bold text-gray-900 sm:text-2xl">Overview</h1>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {loading ? (
           Array.from({ length: 4 }).map((_, i) => (
             <Card key={i}>
@@ -68,7 +68,7 @@ export default function AdminOverviewPage() {
                 <TrendingUp className="h-4 w-4 text-gray-500" />
               </CardHeader>
               <CardContent>
-                <p className="text-2xl font-bold">{(stats?.totalRevenue ?? 0).toLocaleString()}₮</p>
+                <p className="break-words text-xl font-bold sm:text-2xl">{(stats?.totalRevenue ?? 0).toLocaleString()}₮</p>
               </CardContent>
             </Card>
             <Card>
@@ -107,10 +107,10 @@ export default function AdminOverviewPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Орлого / Захиалга (placeholder)</CardTitle>
+          <CardTitle className="text-lg sm:text-base">Орлого / Захиалга (placeholder)</CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="h-[300px] w-full">
+        <CardContent className="min-w-0">
+          <div className="h-[260px] w-full min-w-0 sm:h-[300px]">
             {loading ? (
               <Skeleton className="h-full w-full" />
             ) : (

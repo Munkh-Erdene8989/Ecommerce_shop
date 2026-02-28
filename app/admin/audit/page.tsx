@@ -66,28 +66,29 @@ export default function AdminAuditPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold">Audit log</h1>
+      <h1 className="text-xl font-bold sm:text-2xl">Audit log</h1>
       <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle>Үйлдлийн түүх</CardTitle>
+        <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:space-y-0 pb-2">
+          <CardTitle className="text-lg sm:text-base">Үйлдлийн түүх</CardTitle>
           <select
             value={entityFilter}
             onChange={(e) => { setEntityFilter(e.target.value); setPagination((p) => ({ ...p, pageIndex: 0 })); }}
-            className="h-9 rounded-md border border-gray-300 px-3 text-sm"
+            className="h-9 w-full rounded-md border border-gray-300 px-3 text-sm sm:w-auto"
           >
             <option value="">Бүгд</option>
             <option value="product">Бүтээгдэхүүн</option>
             <option value="inventory_movement">Нөөц</option>
           </select>
         </CardHeader>
-        <CardContent>
+        <CardContent className="px-2 sm:px-6">
           {loading ? (
             <Skeleton className="h-64 w-full" />
           ) : logs.length === 0 ? (
             <div className="py-12 text-center text-gray-500">Бичлэг олдсонгүй.</div>
           ) : (
             <>
-              <Table>
+              <div className="overflow-x-auto -mx-2 sm:mx-0">
+              <Table className="min-w-[520px]">
                 <TableHeader>
                   {table.getHeaderGroups().map((hg) => (
                     <TableRow key={hg.id}>
@@ -107,7 +108,8 @@ export default function AdminAuditPage() {
                   ))}
                 </TableBody>
               </Table>
-              <div className="flex justify-between border-t pt-4">
+              </div>
+              <div className="flex flex-col gap-3 border-t pt-4 sm:flex-row sm:items-center sm:justify-between">
                 <p className="text-sm text-gray-500">Нийт {total}</p>
                 <div className="flex gap-2">
                   <Button variant="outline" size="sm" onClick={() => table.previousPage()} disabled={!table.getCanPreviousPage()}>Өмнөх</Button>

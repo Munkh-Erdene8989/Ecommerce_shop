@@ -271,7 +271,7 @@ export const resolvers = {
       const { data, error } = await db.from('store_settings').select('value').eq('key', 'general').single()
       if (error || !data?.value) {
         return {
-          store_name: 'AZ Beauty',
+          store_name: 'K Beauty',
           logo_url: '',
           hero_image_url: '',
           shipping_rate: 5000,
@@ -281,7 +281,7 @@ export const resolvers = {
       }
       const v = data.value as Record<string, unknown>
       return {
-        store_name: v.store_name ?? 'AZ Beauty',
+        store_name: v.store_name ?? 'K Beauty',
         logo_url: v.logo_url ?? '',
         hero_image_url: v.hero_image_url ?? '',
         shipping_rate: v.shipping_rate ?? 5000,

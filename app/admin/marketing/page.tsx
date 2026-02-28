@@ -108,21 +108,21 @@ export default function AdminMarketingPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold">Маркетинг</h1>
+      <h1 className="text-xl font-bold sm:text-2xl">Маркетинг</h1>
 
       <Card>
         <CardHeader>
-          <CardTitle>Funnel (сүүлийн 30 хоног)</CardTitle>
+          <CardTitle className="text-lg sm:text-base">Funnel (сүүлийн 30 хоног)</CardTitle>
         </CardHeader>
         <CardContent>
           {loading && !counts.length ? (
             <Skeleton className="h-32 w-full" />
           ) : (
-            <div className="flex flex-wrap gap-4">
+            <div className="grid grid-cols-2 gap-3 sm:flex sm:flex-wrap sm:gap-4">
               {funnelData.map(({ step, count }) => (
-                <div key={step} className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-2">
-                  <p className="text-sm text-gray-500">{step}</p>
-                  <p className="text-xl font-semibold">{count}</p>
+                <div key={step} className="rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 sm:px-4">
+                  <p className="truncate text-xs text-gray-500 sm:text-sm">{step}</p>
+                  <p className="text-lg font-semibold sm:text-xl">{count}</p>
                 </div>
               ))}
             </div>
@@ -131,34 +131,35 @@ export default function AdminMarketingPage() {
       </Card>
 
       <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle>UTM / Үйл явдлууд</CardTitle>
-          <div className="flex items-center gap-2">
+        <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:space-y-0 pb-2">
+          <CardTitle className="text-lg sm:text-base">UTM / Үйл явдлууд</CardTitle>
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
             <input
               placeholder="Event name"
               value={eventFilter}
               onChange={(e) => { setEventFilter(e.target.value); setPagination((p) => ({ ...p, pageIndex: 0 })); }}
-              className="h-9 rounded-md border border-gray-300 px-2 text-sm w-40"
+              className="h-9 w-full rounded-md border border-gray-300 px-2 text-sm sm:w-40"
             />
             <input
               placeholder="UTM campaign"
               value={utmCampaign}
               onChange={(e) => { setUtmCampaign(e.target.value); setPagination((p) => ({ ...p, pageIndex: 0 })); }}
-              className="h-9 rounded-md border border-gray-300 px-2 text-sm w-40"
+              className="h-9 w-full rounded-md border border-gray-300 px-2 text-sm sm:w-40"
             />
-            <Button variant="outline" size="sm" onClick={exportCsv}>
+            <Button variant="outline" size="sm" onClick={exportCsv} className="w-full sm:w-auto">
               CSV татах
             </Button>
           </div>
         </CardHeader>
-        <CardContent>
+        <CardContent className="px-2 sm:px-6">
           {loading ? (
             <Skeleton className="h-64 w-full" />
           ) : events.length === 0 ? (
             <div className="py-12 text-center text-gray-500">Үйл явдал олдсонгүй.</div>
           ) : (
             <>
-              <Table>
+              <div className="overflow-x-auto -mx-2 sm:mx-0">
+              <Table className="min-w-[680px]">
                 <TableHeader>
                   {table.getHeaderGroups().map((hg) => (
                     <TableRow key={hg.id}>
@@ -178,7 +179,8 @@ export default function AdminMarketingPage() {
                   ))}
                 </TableBody>
               </Table>
-              <div className="flex justify-between border-t pt-4">
+              </div>
+              <div className="flex flex-col gap-3 border-t pt-4 sm:flex-row sm:items-center sm:justify-between">
                 <p className="text-sm text-gray-500">Нийт {total}</p>
                 <div className="flex gap-2">
                   <Button variant="outline" size="sm" onClick={() => table.previousPage()} disabled={!table.getCanPreviousPage()}>Өмнөх</Button>

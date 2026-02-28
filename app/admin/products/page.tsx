@@ -117,7 +117,7 @@ export default function AdminProductsPage() {
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <h1 className="text-2xl font-bold">Бүтээгдэхүүн</h1>
+        <h1 className="text-xl font-bold sm:text-2xl">Бүтээгдэхүүн</h1>
         <Button asChild>
           <Link href="/admin/products/new">
             <Plus className="mr-2 h-4 w-4" />
@@ -127,10 +127,10 @@ export default function AdminProductsPage() {
       </div>
 
       <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle>Жагсаалт</CardTitle>
-          <div className="flex items-center gap-2">
-            <div className="relative">
+        <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:space-y-0 pb-2">
+          <CardTitle className="text-lg sm:text-base">Жагсаалт</CardTitle>
+          <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
+            <div className="relative w-full sm:w-48">
               <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-500" />
               <Input
                 placeholder="Хайх..."
@@ -139,7 +139,7 @@ export default function AdminProductsPage() {
                   setSearch(e.target.value)
                   setPagination((p) => ({ ...p, pageIndex: 0 }))
                 }}
-                className="pl-8 w-48"
+                className="w-full pl-8 sm:w-48"
               />
             </div>
             <select
@@ -148,7 +148,7 @@ export default function AdminProductsPage() {
                 setStatusFilter(e.target.value)
                 setPagination((p) => ({ ...p, pageIndex: 0 }))
               }}
-              className="h-9 rounded-md border border-gray-300 px-3 text-sm"
+              className="h-9 w-full rounded-md border border-gray-300 px-3 text-sm sm:w-auto"
             >
               <option value="all">Бүгд</option>
               <option value="in_stock">Нөөцтэй</option>
@@ -156,7 +156,7 @@ export default function AdminProductsPage() {
             </select>
           </div>
         </CardHeader>
-        <CardContent>
+        <CardContent className="px-2 sm:px-6">
           {loading ? (
             <Skeleton className="h-64 w-full" />
           ) : products.length === 0 ? (
@@ -168,7 +168,8 @@ export default function AdminProductsPage() {
             </div>
           ) : (
             <>
-              <Table>
+              <div className="overflow-x-auto -mx-2 sm:mx-0">
+              <Table className="min-w-[640px]">
                 <TableHeader>
                   {table.getHeaderGroups().map((hg) => (
                     <TableRow key={hg.id}>
@@ -188,7 +189,8 @@ export default function AdminProductsPage() {
                   ))}
                 </TableBody>
               </Table>
-              <div className="flex items-center justify-between border-t pt-4">
+              </div>
+              <div className="flex flex-col gap-3 border-t pt-4 sm:flex-row sm:items-center sm:justify-between">
                 <p className="text-sm text-gray-500">
                   Нийт {total} бүтээгдэхүүн
                 </p>

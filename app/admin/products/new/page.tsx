@@ -101,8 +101,8 @@ export default function NewProductPage() {
   }
 
   return (
-    <div className="max-w-2xl space-y-6">
-      <h1 className="text-2xl font-bold">Шинэ бүтээгдэхүүн</h1>
+    <div className="w-full max-w-2xl space-y-6">
+      <h1 className="text-xl font-bold sm:text-2xl">Шинэ бүтээгдэхүүн</h1>
       <Card>
         <CardHeader>
           <CardTitle>Үндсэн мэдээлэл</CardTitle>
@@ -118,17 +118,17 @@ export default function NewProductPage() {
               <Label htmlFor="slug">Slug</Label>
               <Input id="slug" {...register('slug')} className="mt-1" placeholder="автоматаар үүснэ" />
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div>
                 <Label htmlFor="brand">Брэнд</Label>
-                <Input id="brand" {...register('brand')} className="mt-1" />
+                <Input id="brand" {...register('brand')} className="mt-1 w-full" />
               </div>
               <div>
                 <Label htmlFor="category">Категори</Label>
-                <Input id="category" {...register('category')} className="mt-1" />
+                <Input id="category" {...register('category')} className="mt-1 w-full" />
               </div>
             </div>
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
               <div>
                 <Label htmlFor="price">Үнэ (₮) *</Label>
                 <Input id="price" type="number" {...register('price')} className="mt-1" />
@@ -161,25 +161,25 @@ export default function NewProductPage() {
               <Label htmlFor="description">Тайлбар</Label>
               <textarea id="description" {...register('description')} rows={3} className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
             </div>
-            <div className="flex gap-4">
-              <label className="flex items-center gap-2">
-                <input type="checkbox" {...register('is_featured')} />
+            <div className="flex flex-wrap gap-4">
+              <label className="flex min-h-[44px] cursor-pointer items-center gap-2">
+                <input type="checkbox" {...register('is_featured')} className="h-4 w-4" />
                 <span className="text-sm">Онцлох</span>
               </label>
-              <label className="flex items-center gap-2">
-                <input type="checkbox" {...register('is_new')} />
+              <label className="flex min-h-[44px] cursor-pointer items-center gap-2">
+                <input type="checkbox" {...register('is_new')} className="h-4 w-4" />
                 <span className="text-sm">Шинэ</span>
               </label>
-              <label className="flex items-center gap-2">
-                <input type="checkbox" {...register('is_bestseller')} />
+              <label className="flex min-h-[44px] cursor-pointer items-center gap-2">
+                <input type="checkbox" {...register('is_bestseller')} className="h-4 w-4" />
                 <span className="text-sm">Хит</span>
               </label>
             </div>
-            <div className="flex gap-2">
-              <Button type="submit" disabled={loading}>
+            <div className="flex flex-col gap-2 sm:flex-row sm:gap-2">
+              <Button type="submit" disabled={loading} className="w-full sm:w-auto">
                 {loading ? 'Хадгалж байна...' : 'Хадгалах'}
               </Button>
-              <Button type="button" variant="outline" onClick={() => router.push('/admin/products')}>
+              <Button type="button" variant="outline" onClick={() => router.push('/admin/products')} className="w-full sm:w-auto">
                 Буцах
               </Button>
             </div>

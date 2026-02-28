@@ -129,22 +129,23 @@ export default function AdminCouponsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between">
-        <h1 className="text-2xl font-bold">Купон</h1>
-        <Button onClick={() => setCreateOpen(true)}>Шинэ купон</Button>
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <h1 className="text-xl font-bold sm:text-2xl">Купон</h1>
+        <Button onClick={() => setCreateOpen(true)} className="w-full sm:w-auto">Шинэ купон</Button>
       </div>
       <Card>
         <CardHeader>
-          <CardTitle>Жагсаалт</CardTitle>
+          <CardTitle className="text-lg sm:text-base">Жагсаалт</CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="px-2 sm:px-6">
           {loading ? (
             <Skeleton className="h-64 w-full" />
           ) : coupons.length === 0 ? (
             <div className="py-12 text-center text-gray-500">Купон олдсонгүй.</div>
           ) : (
             <>
-              <Table>
+              <div className="overflow-x-auto -mx-2 sm:mx-0">
+              <Table className="min-w-[640px]">
                 <TableHeader>
                   {table.getHeaderGroups().map((hg) => (
                     <TableRow key={hg.id}>
@@ -164,7 +165,8 @@ export default function AdminCouponsPage() {
                   ))}
                 </TableBody>
               </Table>
-              <div className="flex justify-between border-t pt-4">
+              </div>
+              <div className="flex flex-col gap-3 border-t pt-4 sm:flex-row sm:items-center sm:justify-between">
                 <p className="text-sm text-gray-500">Нийт {total}</p>
                 <div className="flex gap-2">
                   <Button variant="outline" size="sm" onClick={() => table.previousPage()} disabled={!table.getCanPreviousPage()}>Өмнөх</Button>
@@ -190,14 +192,14 @@ export default function AdminCouponsPage() {
       </Dialog>
 
       <Dialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>
-        <DialogContent>
+        <DialogContent className="w-[calc(100%-2rem)] max-w-lg sm:w-full">
           <DialogHeader>
             <DialogTitle>Купон устгах</DialogTitle>
             <DialogDescription>Итгэлтэй байна уу? Энэ үйлдлийг буцааж болохгүй.</DialogDescription>
           </DialogHeader>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setDeleteId(null)}>Цуцлах</Button>
-            <Button variant="destructive" onClick={() => deleteId && deleteCoupon({ variables: { id: deleteId } })} disabled={deleting}>
+          <DialogFooter className="flex flex-col gap-2 sm:flex-row">
+            <Button variant="outline" onClick={() => setDeleteId(null)} className="w-full sm:w-auto">Цуцлах</Button>
+            <Button variant="destructive" onClick={() => deleteId && deleteCoupon({ variables: { id: deleteId } })} disabled={deleting} className="w-full sm:w-auto">
               {deleting ? 'Устгаж байна...' : 'Устгах'}
             </Button>
           </DialogFooter>
@@ -260,9 +262,9 @@ function CreateCouponForm({
         <Label>Дээд ашиглалтын тоо</Label>
         <Input type="number" value={maxUses} onChange={(e) => setMaxUses(e.target.value)} />
       </div>
-      <DialogFooter>
-        <Button type="button" variant="outline" onClick={onCancel}>Цуцлах</Button>
-        <Button type="submit" disabled={loading}>{loading ? 'Хадгалж байна...' : 'Нэмэх'}</Button>
+      <DialogFooter className="flex flex-col gap-2 sm:flex-row">
+        <Button type="button" variant="outline" onClick={onCancel} className="w-full sm:w-auto">Цуцлах</Button>
+        <Button type="submit" disabled={loading} className="w-full sm:w-auto">{loading ? 'Хадгалж байна...' : 'Нэмэх'}</Button>
       </DialogFooter>
     </form>
   )

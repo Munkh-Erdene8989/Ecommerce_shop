@@ -51,7 +51,7 @@ function StatusSelectCell({ orderId, initialStatus }: { orderId: string; initial
 
   return (
     <Select value={value} onValueChange={handleChange} disabled={loading}>
-      <SelectTrigger className="h-8 w-[140px]">
+      <SelectTrigger className="h-8 w-full min-w-[100px] sm:w-[140px]">
         <SelectValue />
       </SelectTrigger>
       <SelectContent>
@@ -150,17 +150,17 @@ export default function AdminOrdersPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold">Захиалга</h1>
+      <h1 className="text-xl font-bold sm:text-2xl">Захиалга</h1>
       <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle>Жагсаалт</CardTitle>
+        <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:space-y-0 pb-2">
+          <CardTitle className="text-lg sm:text-base">Жагсаалт</CardTitle>
           <select
             value={statusFilter}
             onChange={(e) => {
               setStatusFilter(e.target.value)
               setPagination((p) => ({ ...p, pageIndex: 0 }))
             }}
-            className="h-9 rounded-md border border-gray-300 px-3 text-sm"
+            className="h-9 w-full rounded-md border border-gray-300 px-3 text-sm sm:w-auto"
           >
             <option value="all">Бүгд</option>
             <option value="pending">Хүлээгдэж буй</option>
@@ -171,14 +171,15 @@ export default function AdminOrdersPage() {
             <option value="cancelled">Цуцлагдсан</option>
           </select>
         </CardHeader>
-        <CardContent>
+        <CardContent className="px-2 sm:px-6">
           {loading ? (
             <Skeleton className="h-64 w-full" />
           ) : orders.length === 0 ? (
             <div className="py-12 text-center text-gray-500">Захиалга олдсонгүй.</div>
           ) : (
             <>
-              <Table>
+              <div className="overflow-x-auto -mx-2 sm:mx-0">
+              <Table className="min-w-[680px]">
                 <TableHeader>
                   {table.getHeaderGroups().map((hg) => (
                     <TableRow key={hg.id}>
@@ -198,7 +199,8 @@ export default function AdminOrdersPage() {
                   ))}
                 </TableBody>
               </Table>
-              <div className="flex items-center justify-between border-t pt-4">
+              </div>
+              <div className="flex flex-col gap-3 border-t pt-4 sm:flex-row sm:items-center sm:justify-between">
                 <p className="text-sm text-gray-500">Нийт {total} захиалга</p>
                 <div className="flex gap-2">
                   <Button variant="outline" size="sm" onClick={() => table.previousPage()} disabled={!table.getCanPreviousPage()}>

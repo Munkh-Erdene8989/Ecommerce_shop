@@ -64,7 +64,7 @@ export default function AdminOrderDetailPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold">Захиалга #{String(order.id).slice(0, 8)}</h1>
+      <h1 className="break-words text-xl font-bold sm:text-2xl">Захиалга #{String(order.id).slice(0, 8)}</h1>
 
       <Card>
         <CardHeader>
@@ -109,7 +109,7 @@ export default function AdminOrderDetailPage() {
               placeholder="Зөвхөн админ харна"
             />
           </div>
-          <Button onClick={handleSave} disabled={updating}>
+          <Button onClick={handleSave} disabled={updating} className="w-full sm:w-auto">
             {updating ? 'Хадгалж байна...' : 'Хадгалах'}
           </Button>
         </CardContent>
@@ -126,7 +126,7 @@ export default function AdminOrderDetailPage() {
           {shipping && (
             <>
               <p className="mt-2 font-medium">Хаяг:</p>
-              <pre className="mt-1 rounded bg-gray-100 p-2 text-xs">{JSON.stringify(shipping, null, 2)}</pre>
+              <pre className="mt-1 max-w-full overflow-x-auto rounded bg-gray-100 p-2 text-xs">{JSON.stringify(shipping, null, 2)}</pre>
             </>
           )}
         </CardContent>
@@ -134,10 +134,11 @@ export default function AdminOrderDetailPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Барааны дэлгэрэнгүй</CardTitle>
+          <CardTitle className="text-lg sm:text-base">Барааны дэлгэрэнгүй</CardTitle>
         </CardHeader>
-        <CardContent>
-          <Table>
+        <CardContent className="px-2 sm:px-6">
+          <div className="overflow-x-auto -mx-2 sm:mx-0">
+          <Table className="min-w-[320px]">
             <TableHeader>
               <TableRow>
                 <TableHead>Бүтээгдэхүүн</TableHead>
@@ -155,7 +156,8 @@ export default function AdminOrderDetailPage() {
               ))}
             </TableBody>
           </Table>
-          <p className="mt-2 text-right font-medium">
+          </div>
+          <p className="mt-2 break-words text-right text-sm font-medium sm:text-base">
             Дэд дүн: {order.subtotal?.toLocaleString()}₮ · Хүргэлт: {order.shipping_cost?.toLocaleString()}₮ · Нийт: {order.total?.toLocaleString()}₮
           </p>
         </CardContent>

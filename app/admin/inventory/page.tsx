@@ -64,15 +64,15 @@ export default function AdminInventoryPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold">Нөөц</h1>
+      <h1 className="text-xl font-bold sm:text-2xl">Нөөц</h1>
 
       <Card>
         <CardHeader>
-          <CardTitle>Нөөц тохируулах</CardTitle>
+          <CardTitle className="text-lg sm:text-base">Нөөц тохируулах</CardTitle>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleAdjust} className="flex flex-wrap items-end gap-4">
-            <div className="min-w-[200px]">
+          <form onSubmit={handleAdjust} className="flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-end">
+            <div className="w-full min-w-0 sm:min-w-[200px]">
               <Label>Бүтээгдэхүүн</Label>
               <select
                 value={productId}
@@ -86,28 +86,28 @@ export default function AdminInventoryPage() {
                 ))}
               </select>
             </div>
-            <div>
+            <div className="w-full sm:w-auto">
               <Label>Өөрчлөлт (+/-)</Label>
               <Input
                 type="number"
                 value={quantityDelta}
                 onChange={(e) => setQuantityDelta(e.target.value)}
-                className="mt-1 w-24"
+                className="mt-1 w-full sm:w-24"
                 placeholder="+10 / -5"
                 required
               />
             </div>
-            <div className="min-w-[200px]">
+            <div className="w-full min-w-0 sm:min-w-[200px]">
               <Label>Шалтгаан</Label>
               <Input
                 value={reason}
                 onChange={(e) => setReason(e.target.value)}
-                className="mt-1"
+                className="mt-1 w-full"
                 placeholder="Жишээ: захиалга, буцаалт"
                 required
               />
             </div>
-            <Button type="submit" disabled={loading}>
+            <Button type="submit" disabled={loading} className="w-full sm:w-auto">
               {loading ? 'Хадгалж байна...' : 'Хадгалах'}
             </Button>
           </form>
@@ -116,13 +116,14 @@ export default function AdminInventoryPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Бүтээгдэхүүний нөөц (одоогийн)</CardTitle>
+          <CardTitle className="text-lg sm:text-base">Бүтээгдэхүүний нөөц (одоогийн)</CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="px-2 sm:px-6">
           {products.length === 0 ? (
             <p className="text-gray-500">Бүтээгдэхүүн байхгүй.</p>
           ) : (
-            <Table>
+            <div className="overflow-x-auto -mx-2 sm:mx-0">
+            <Table className="min-w-[400px]">
               <TableHeader>
                 <TableRow>
                   <TableHead>Нэр</TableHead>
@@ -140,6 +141,7 @@ export default function AdminInventoryPage() {
                 ))}
               </TableBody>
             </Table>
+            </div>
           )}
         </CardContent>
       </Card>
