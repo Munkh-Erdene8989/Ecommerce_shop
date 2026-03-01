@@ -181,6 +181,32 @@ export const MARKETING_EVENT_COUNTS = gql`
   }
 `
 
+export const POPUP_SETTINGS = gql`
+  query PopupSettings {
+    popupSettings {
+      enabled
+      title
+      message
+      image_url
+      cta_text
+      cta_url
+    }
+  }
+`
+
+export const UPDATE_POPUP_SETTINGS = gql`
+  mutation UpdatePopupSettings($input: UpdatePopupSettingsInput!) {
+    updatePopupSettings(input: $input) {
+      enabled
+      title
+      message
+      image_url
+      cta_text
+      cta_url
+    }
+  }
+`
+
 export const ADMIN_AUDIT_LOGS = gql`
   query AdminAuditLogs($paging: PagingInput, $entity_type: String) {
     adminAuditLogs(paging: $paging, entity_type: $entity_type) {

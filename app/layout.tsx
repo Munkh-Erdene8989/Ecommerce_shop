@@ -6,6 +6,7 @@ import { StoreSettingsProvider } from '@/contexts/StoreSettingsContext'
 import { AuthProvider } from '@/lib/providers/AuthProvider'
 import { Toaster } from 'react-hot-toast'
 import { SpeedInsights } from '@vercel/speed-insights/next'
+import { GlobalPopup } from '@/components/GlobalPopup'
 
 const plusJakarta = Plus_Jakarta_Sans({ subsets: ['latin'], display: 'swap' })
 
@@ -22,6 +23,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <StoreSettingsProvider>
             <CartProvider>
               {children}
+              <GlobalPopup />
               <Toaster position="top-center" toastOptions={{ duration: 3000 }} />
               <SpeedInsights />
             </CartProvider>

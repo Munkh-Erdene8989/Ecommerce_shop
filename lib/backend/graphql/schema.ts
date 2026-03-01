@@ -169,6 +169,15 @@ export const typeDefs = `#graphql
     tax_rate: Float
   }
 
+  type PopupSettings {
+    enabled: Boolean!
+    title: String
+    message: String
+    image_url: String
+    cta_text: String
+    cta_url: String
+  }
+
   type MarketingEventRow {
     id: ID!
     event_name: String!
@@ -213,6 +222,7 @@ export const typeDefs = `#graphql
     adminCoupons(paging: PagingInput): [Coupon!]!
     adminCouponsTotal: Int!
     storeSettings: StoreSettings
+    popupSettings: PopupSettings!
     adminAuditLogs(paging: PagingInput, entity_type: String): [AuditLogRow!]!
     adminAuditLogsTotal(entity_type: String): Int!
   }
@@ -311,6 +321,15 @@ export const typeDefs = `#graphql
     tax_rate: Float
   }
 
+  input UpdatePopupSettingsInput {
+    enabled: Boolean
+    title: String
+    message: String
+    image_url: String
+    cta_text: String
+    cta_url: String
+  }
+
   input CreateCouponInput {
     code: String!
     type: String!
@@ -333,5 +352,6 @@ export const typeDefs = `#graphql
     updateCoupon(input: UpdateCouponInput!): Coupon!
     deleteCoupon(id: ID!): Boolean!
     updateStoreSettings(input: StoreSettingsInput!): StoreSettings!
+    updatePopupSettings(input: UpdatePopupSettingsInput!): PopupSettings!
   }
 `

@@ -290,6 +290,30 @@ export const resolvers = {
       }
     },
 
+    async popupSettings(_: unknown, _args: unknown, ctx: GraphQLContext) {
+      const db = supabase(ctx)
+      const { data, error } = await db.from('store_settings').select('value').eq('key', 'popup').single()
+      if (error || !data?.value) {
+        return {
+          enabled: false,
+          title: '',
+          message: '',
+          image_url: '',
+          cta_text: '',
+          cta_url: '',
+        }
+      }
+      const v = data.value as Record<string, unknown>
+      return {
+        enabled: Boolean(v.enabled),
+        title: (v.title as string) ?? '',
+        message: (v.message as string) ?? '',
+        image_url: (v.image_url as string) ?? '',
+        cta_text: (v.cta_text as string) ?? '',
+        cta_url: (v.cta_url as string) ?? '',
+      }
+    },
+
     async adminAuditLogs(_: unknown, args: { paging?: { limit?: number; offset?: number }; entity_type?: string }, ctx: GraphQLContext) {
       await requireAdmin(ctx.authHeader)
       let q = supabase(ctx).from('audit_logs').select('id, user_id, action, entity_type, entity_id, created_at').order('created_at', { ascending: false })
@@ -559,6 +583,34 @@ export const resolvers = {
         shipping_rate: merged.shipping_rate ?? 5000,
         free_shipping_threshold: merged.free_shipping_threshold ?? 60000,
         tax_rate: merged.tax_rate ?? 0,
+      }
+    },
+
+    async updatePopupSettings(_: unknown, args: { input: Record<string, unknown> }, ctx: GraphQLContext) {
+      await requireAdmin(ctx.authHeader)
+      const input = args.input as Record<string, unknown>
+      const db = supabase(ctx)
+      const { data: existing } = await db.from('store_settings').select('value').eq('key', 'popup').single()
+      const current = (existing?.value as Record<string, unknown>) ?? {}
+      const merged = {
+        enabled: input.enabled ?? current.enabled ?? false,
+        title: input.title !== undefined ? input.title : current.title ?? '',
+        message: input.message !== undefined ? input.message : current.message ?? '',
+        image_url: input.image_url !== undefined ? input.image_url : current.image_url ?? '',
+        cta_text: input.cta_text !== undefined ? input.cta_text : current.cta_text ?? '',
+        cta_url: input.cta_url !== undefined ? input.cta_url : current.cta_url ?? '',
+      }
+      const { error } = await db
+        .from('store_settings')
+        .upsert({ key: 'popup', value: merged, updated_at: new Date().toISOString() }, { onConflict: 'key' })
+      if (error) throw new Error(error.message)
+      return {
+        enabled: Boolean(merged.enabled),
+        title: String(merged.title ?? ''),
+        message: String(merged.message ?? ''),
+        image_url: String(merged.image_url ?? ''),
+        cta_text: String(merged.cta_text ?? ''),
+        cta_url: String(merged.cta_url ?? ''),
       }
     },
   },

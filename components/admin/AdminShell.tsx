@@ -19,6 +19,7 @@ import {
   Image,
   Menu,
   X,
+  PanelTop,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
@@ -33,6 +34,7 @@ const nav = [
   { href: '/admin/promotions/coupons', label: 'Купон', icon: Tag },
   { href: '/admin/marketing', label: 'Маркетинг', icon: Megaphone },
   { href: '/admin/homepage', label: 'Нүүр хуудас (Hero)', icon: Image },
+  { href: '/admin/popup', label: 'Popup цонх', icon: PanelTop },
   { href: '/admin/audit', label: 'Audit log', icon: FileText },
   { href: '/admin/settings', label: 'Тохиргоо', icon: Settings },
 ]

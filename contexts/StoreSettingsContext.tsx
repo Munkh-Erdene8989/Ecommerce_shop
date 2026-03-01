@@ -20,19 +20,21 @@ export function StoreSettingsProvider({ children }: { children: React.ReactNode 
 
   const fetchSettings = React.useCallback(() => {
     const supabase = createClient()
-    supabase
+    void supabase
       .from('store_settings')
       .select('value')
       .eq('key', 'general')
       .single()
-      .then(({ data }) => {
-        const v = (data?.value as { store_name?: string; logo_url?: string } | null) ?? {}
-        setSettings({
-          storeName: typeof v.store_name === 'string' && v.store_name.trim() ? v.store_name : defaultSettings.storeName,
-          logoUrl: typeof v.logo_url === 'string' ? v.logo_url : defaultSettings.logoUrl,
-        })
-      })
-      .catch(() => {})
+      .then(
+        ({ data }) => {
+          const v = (data?.value as { store_name?: string; logo_url?: string } | null) ?? {}
+          setSettings({
+            storeName: typeof v.store_name === 'string' && v.store_name.trim() ? v.store_name : defaultSettings.storeName,
+            logoUrl: typeof v.logo_url === 'string' ? v.logo_url : defaultSettings.logoUrl,
+          })
+        },
+        () => {}
+      )
   }, [])
 
   useEffect(() => {
